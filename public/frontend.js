@@ -136,6 +136,8 @@
     // Clear previous content
     body.innerHTML = '';
 
+    const bookingUrl = payload.bookingUrl || '';
+
     // Wrapper
     const wrapper = document.createElement('div');
     wrapper.className = 'wp-mbb-hotel-selector';
@@ -157,31 +159,138 @@
       select.appendChild(option);
     });
 
+    // Date range (inline calendar if available, fallback to native date inputs)
+    const datesWrapper = document.createElement('div');
+    datesWrapper.className = 'wp-mbb-hotel-selector__dates';
+
+    let arrivalValue = '';
+    let departureValue = '';
+
+    const arrivalInput = document.createElement('input');
+    arrivalInput.type = 'hidden';
+    const departureInput = document.createElement('input');
+    departureInput.type = 'hidden';
+
+    const calendarHost = document.createElement('div');
+    calendarHost.className = 'wp-mbb-hotel-selector__calendar';
+
+    const fallbackInputs = document.createElement('div');
+    fallbackInputs.className = 'wp-mbb-hotel-selector__fallback';
+
+    const arrivalLabel = document.createElement('label');
+    arrivalLabel.textContent = 'Arrival';
+    arrivalLabel.className = 'wp-mbb-hotel-selector__label';
+    const arrivalNative = document.createElement('input');
+    arrivalNative.type = 'date';
+    arrivalNative.className = 'wp-mbb-hotel-selector__date-input';
+
+    const departureLabel = document.createElement('label');
+    departureLabel.textContent = 'Departure';
+    departureLabel.className = 'wp-mbb-hotel-selector__label';
+    const departureNative = document.createElement('input');
+    departureNative.type = 'date';
+    departureNative.className = 'wp-mbb-hotel-selector__date-input';
+
+    fallbackInputs.appendChild(arrivalLabel);
+    fallbackInputs.appendChild(arrivalNative);
+    fallbackInputs.appendChild(departureLabel);
+    fallbackInputs.appendChild(departureNative);
+
+    // Try to initialize easepick range calendar if available
+    (function initRangePicker() {
+      if (typeof window.EasePick === 'undefined' && typeof window.easepick === 'undefined') {
+        datesWrapper.appendChild(fallbackInputs);
+        arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
+        departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+        return;
+      }
+
+      const EasePicker = window.EasePick || window.easepick;
+      const rangeEl = document.createElement('input');
+      rangeEl.type = 'text';
+      rangeEl.className = 'wp-mbb-hotel-selector__range-input';
+      rangeEl.placeholder = 'Select dates';
+      calendarHost.appendChild(rangeEl);
+      datesWrapper.appendChild(calendarHost);
+
+      try {
+        const picker = new EasePicker.create({
+          element: rangeEl,
+          inline: true,
+          calendars: 2,
+          grid: 2,
+          autoApply: true,
+          plugins: ['RangePlugin'],
+          RangePlugin: {
+            tooltip: true,
+          },
+          setup(p) {
+            p.on('select', (e) => {
+              const start = e.detail.start;
+              const end = e.detail.end;
+              arrivalValue = start ? start.format('YYYY-MM-DD') : '';
+              departureValue = end ? end.format('YYYY-MM-DD') : '';
+              rangeEl.value = arrivalValue && departureValue ? `${arrivalValue} → ${departureValue}` : '';
+            });
+          },
+        });
+        // If easepick fails, fallback
+        if (!picker) {
+          datesWrapper.appendChild(fallbackInputs);
+          arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
+          departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+        }
+      } catch (err) {
+        console.warn('[Mobile Bottom Bar] Failed to init range picker, fallback to native dates', err);
+        datesWrapper.appendChild(fallbackInputs);
+        arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
+        departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+      }
+    })();
+
     // CTA button
     const cta = document.createElement('button');
     cta.type = 'button';
     cta.className = 'wp-mbb-hotel-selector__cta wp-mbb-hotel-list__button';
-    cta.textContent = 'Select dates';
+    cta.textContent = 'Check availability';
 
     cta.addEventListener('click', function (e) {
       e.preventDefault();
       const hotelId = select.value;
+      const hotelObj = hotels.find(h => h.id === hotelId) || { id: hotelId, name: hotelId };
+      const arrival = arrivalValue || arrivalInput.value || '';
+      const departure = departureValue || departureInput.value || '';
 
       if (!hotelId) {
         console.warn('[Mobile Bottom Bar] No hotel selected');
+        return;
+      }
+      if (!arrival || !departure) {
+        console.warn('[Mobile Bottom Bar] Arrival/Departure missing');
         return;
       }
 
       // Close modal
       closeHotelSelectionModal(hotelModalRefs);
 
-      // Trigger existing modal flow with the selected hotel.
-      // The embedded calendar modal will handle date selection and submission.
+      // Prefer bookingUrl for direct redirect; fall back to form trigger
+      if (bookingUrl) {
+        const url = new URL(bookingUrl, window.location.origin);
+        url.searchParams.set('hotel_id', hotelId);
+        url.searchParams.set('Arrival', arrival);
+        url.searchParams.set('Departure', departure);
+        window.location.href = url.toString();
+        return;
+      }
+
+      // Fallback: trigger existing modal flow with selected hotel
+      // Populate hidden fields then trigger calendar
       triggerLighthouseCalendar(payload, hotelId);
     });
 
     wrapper.appendChild(selectLabel);
     wrapper.appendChild(select);
+    wrapper.appendChild(datesWrapper);
     wrapper.appendChild(cta);
 
     body.appendChild(wrapper);
