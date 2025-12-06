@@ -282,12 +282,12 @@
 	color: var(--color-fg-accent);
 }
 .calendar > .days-grid > .day.selected {
-	background-color: var(--color-fg-primary);
-	color: var(--color-fg-selected);
+	background-color: #dc143c;
+	color: #ffffff;
 }
 .calendar > .days-grid > .day.in-range:hover {
-	background-color: var(--color-bg-inrange);
-	color: var(--color-fg-default);
+	background-color: #b5bbc4;
+	color: #000000;
 	border: none;
 }
 @media (max-width: 480px) {
