@@ -196,10 +196,41 @@
     fallbackInputs.appendChild(departureLabel);
     fallbackInputs.appendChild(departureNative);
 
-    // Try to initialize easepick range calendar if available
-    (function initRangePicker() {
+    function loadEasepickRange(cb) {
+      const hasRange = (window.easepick && typeof window.easepick.create === 'function' && window.easepick.RangePlugin);
+      if (hasRange) {
+        cb(true);
+        return;
+      }
+
+      const scripts = [
+        'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.umd.min.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/range-plugin@1.2.1/dist/index.umd.min.js',
+      ];
+
+      let loaded = 0;
+      scripts.forEach(function (src) {
+        const tag = document.createElement('script');
+        tag.src = src;
+        tag.async = true;
+        tag.onload = function () {
+          loaded += 1;
+          if (loaded === scripts.length) {
+            const ok = (window.easepick && typeof window.easepick.create === 'function' && window.easepick.RangePlugin);
+            cb(ok);
+          }
+        };
+        tag.onerror = function () {
+          console.warn('[Mobile Bottom Bar] Failed to load easepick script', src);
+          cb(false);
+        };
+        document.head.appendChild(tag);
+      });
+    }
+
+    function initRangePicker() {
       const easepickGlobal = (typeof window.easepick !== 'undefined') ? window.easepick : null;
-      if (!easepickGlobal || typeof easepickGlobal.create !== 'function') {
+      if (!easepickGlobal || typeof easepickGlobal.create !== 'function' || !easepickGlobal.RangePlugin) {
         datesWrapper.appendChild(fallbackInputs);
         arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
         departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
@@ -245,7 +276,17 @@
         arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
         departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
       }
-    })();
+    }
+
+    loadEasepickRange(function (ok) {
+      if (!ok) {
+        datesWrapper.appendChild(fallbackInputs);
+        arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
+        departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+        return;
+      }
+      initRangePicker();
+    });
 
     // CTA button
     const cta = document.createElement('button');
