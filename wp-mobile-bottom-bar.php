@@ -183,6 +183,8 @@ final class Mobile_Bottom_Bar_Plugin {
     public function rest_save_settings(\WP_REST_Request $request): \WP_REST_Response {
         $incoming_data = (array) $request->get_json_params();
         
+        error_log('[Mobile Bottom Bar] REST save_settings called with data: ' . json_encode($incoming_data));
+        
         // Get existing settings
         $existing_settings = $this->get_settings();
         
@@ -190,12 +192,20 @@ final class Mobile_Bottom_Bar_Plugin {
         // This allows partial updates (e.g., updating just the bars)
         $merged_data = array_merge($existing_settings, $incoming_data);
         
+        error_log('[Mobile Bottom Bar] Merged data: ' . json_encode($merged_data));
+        
         // Sanitize the merged data
         $data = $this->sanitize_settings($merged_data);
 
-        update_option(self::OPTION_KEY, $data);
+        $updated = update_option(self::OPTION_KEY, $data);
+        
+        error_log('[Mobile Bottom Bar] Option updated: ' . ($updated ? 'true' : 'false'));
 
-        return new \WP_REST_Response($data, 200);
+        return new \WP_REST_Response([
+            'success' => true,
+            'data' => $data,
+            'message' => 'Settings saved successfully',
+        ], 200);
     }
 
     public function permissions_check() {

@@ -153,13 +153,17 @@
         .then((response) => {
           console.log('[Mobile Bottom Bar Admin] Response status:', response.status);
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.text().then((text) => {
+              console.error('[Mobile Bottom Bar Admin] Response text:', text);
+              throw new Error(`HTTP error! status: ${response.status}`);
+            });
           }
           return response.json();
         })
         .then((result) => {
           console.log('[Mobile Bottom Bar Admin] Save result:', result);
-          if (result.success || result.id || result.data) {
+          // Check if we got a successful response
+          if (result && result.success) {
             this.showStatus('Settings saved successfully!', 'success');
             this.updatePreview();
           } else {
