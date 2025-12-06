@@ -292,11 +292,15 @@
       const type = target.dataset.type;
       const linkBehavior = target.dataset.linkTarget;
 
-      console.log('[Mobile Bottom Bar] Click type:', type, 'target:', target);
+      console.log('[Mobile Bottom Bar] Click type:', type, 'linkBehavior:', linkBehavior);
+      console.log('[Mobile Bottom Bar] Target href:', target.getAttribute('href'));
+      console.log('[Mobile Bottom Bar] Target dataset:', target.dataset);
 
       if (type === 'mylighthouse-multi') {
+        console.log('[Mobile Bottom Bar] Preventing default for mylighthouse-multi');
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
         console.log('[Mobile Bottom Bar] Multi-hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
         console.log('[Mobile Bottom Bar] Parsed payload:', payload);
