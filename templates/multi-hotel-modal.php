@@ -89,7 +89,7 @@ wp_enqueue_script(
 						<?php esc_html_e('Select Dates', 'mobile-bottom-bar'); ?>
 					</label>
 					<div class="wp-mbb-hotel-selector__dates">
-						<input type="text" id="wp-mbb-date-display" class="wp-mbb-hotel-selector__range-input" placeholder="<?php esc_attr_e('Select dates', 'mobile-bottom-bar'); ?>" readonly />
+						<input type="text" id="wp-mbb-date-display" class="wp-mbb-hotel-selector__range-input" placeholder="<?php esc_attr_e('Select dates', 'mobile-bottom-bar'); ?>" readonly style="display: none;" />
 						<div class="wp-mbb-hotel-selector__calendar"></div>
 						<input type="hidden" id="wp-mbb-arrival" />
 						<input type="hidden" id="wp-mbb-departure" />

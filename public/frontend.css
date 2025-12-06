@@ -656,6 +656,45 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
+/* Easepick calendar styling for hotel modal */
+#wp-mbb-multi-hotel-modal .easepick-wrapper {
+  width: 100%;
+  display: block !important;
+  visibility: visible !important;
+}
+
+#wp-mbb-multi-hotel-modal .easepick-day {
+  width: 100%;
+}
+
+/* Start and end date styling - red background */
+#wp-mbb-multi-hotel-modal .easepick-day.start,
+#wp-mbb-multi-hotel-modal .easepick-day.end {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+#wp-mbb-multi-hotel-modal .easepick-day.start:hover,
+#wp-mbb-multi-hotel-modal .easepick-day.end:hover {
+  background-color: #dc2626 !important;
+}
+
+/* In-range dates - light grey background */
+#wp-mbb-multi-hotel-modal .easepick-day.in-range {
+  background-color: #e5e7eb !important;
+  color: #1f2937 !important;
+}
+
+#wp-mbb-multi-hotel-modal .easepick-day.in-range:hover {
+  background-color: #d1d5db !important;
+}
+
+/* Disabled dates styling */
+#wp-mbb-multi-hotel-modal .easepick-day.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .wp-mbb-hotel-selector__cta {
   width: 100%;
   padding: 0.95rem 1rem;
