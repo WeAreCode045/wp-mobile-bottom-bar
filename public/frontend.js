@@ -136,8 +136,6 @@
     // Clear previous content
     body.innerHTML = '';
 
-    const bookingUrl = payload.bookingUrl || '';
-
     // Wrapper
     const wrapper = document.createElement('div');
     wrapper.className = 'wp-mbb-hotel-selector';
@@ -159,72 +157,31 @@
       select.appendChild(option);
     });
 
-    // Date inputs
-    const datesWrapper = document.createElement('div');
-    datesWrapper.className = 'wp-mbb-hotel-selector__dates';
-
-    const arrivalLabel = document.createElement('label');
-    arrivalLabel.textContent = 'Arrival';
-    arrivalLabel.className = 'wp-mbb-hotel-selector__label';
-    const arrivalInput = document.createElement('input');
-    arrivalInput.type = 'date';
-    arrivalInput.className = 'wp-mbb-hotel-selector__date-input';
-
-    const departureLabel = document.createElement('label');
-    departureLabel.textContent = 'Departure';
-    departureLabel.className = 'wp-mbb-hotel-selector__label';
-    const departureInput = document.createElement('input');
-    departureInput.type = 'date';
-    departureInput.className = 'wp-mbb-hotel-selector__date-input';
-
-    datesWrapper.appendChild(arrivalLabel);
-    datesWrapper.appendChild(arrivalInput);
-    datesWrapper.appendChild(departureLabel);
-    datesWrapper.appendChild(departureInput);
-
     // CTA button
     const cta = document.createElement('button');
     cta.type = 'button';
     cta.className = 'wp-mbb-hotel-selector__cta wp-mbb-hotel-list__button';
-    cta.textContent = 'Check availability';
+    cta.textContent = 'Select dates';
 
     cta.addEventListener('click', function (e) {
       e.preventDefault();
       const hotelId = select.value;
-      const hotelObj = hotels.find(h => h.id === hotelId) || { id: hotelId, name: hotelId };
-      const arrival = arrivalInput.value;
-      const departure = departureInput.value;
 
       if (!hotelId) {
         console.warn('[Mobile Bottom Bar] No hotel selected');
-        return;
-      }
-      if (!arrival || !departure) {
-        console.warn('[Mobile Bottom Bar] Arrival/Departure missing');
         return;
       }
 
       // Close modal
       closeHotelSelectionModal(hotelModalRefs);
 
-      // Prefer bookingUrl for direct redirect; fall back to form trigger
-      if (bookingUrl) {
-        const url = new URL(bookingUrl, window.location.origin);
-        url.searchParams.set('hotel_id', hotelId);
-        url.searchParams.set('Arrival', arrival);
-        url.searchParams.set('Departure', departure);
-        window.location.href = url.toString();
-        return;
-      }
-
-      // Fallback: trigger existing modal flow with selected hotel
-      // Populate hidden fields then trigger calendar
+      // Trigger existing modal flow with the selected hotel.
+      // The embedded calendar modal will handle date selection and submission.
       triggerLighthouseCalendar(payload, hotelId);
     });
 
     wrapper.appendChild(selectLabel);
     wrapper.appendChild(select);
-    wrapper.appendChild(datesWrapper);
     wrapper.appendChild(cta);
 
     body.appendChild(wrapper);
