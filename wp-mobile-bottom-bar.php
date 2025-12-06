@@ -1405,6 +1405,48 @@ final class Mobile_Bottom_Bar_Plugin {
         return false;
     }
 
+    private function normalize_selected_hotels(array $selected_hotels): array {
+        $available_hotels_map = [];
+        $available_hotels = $this->get_mylighthouse_hotels();
+        
+        // Create a map of hotel IDs to names for quick lookup
+        foreach ($available_hotels as $hotel) {
+            if (!empty($hotel['id'])) {
+                $available_hotels_map[$hotel['id']] = $hotel['name'] ?? $hotel['id'];
+            }
+        }
+        
+        $normalized = [];
+        
+        foreach ($selected_hotels as $hotel) {
+            if (is_string($hotel)) {
+                // If hotel is just a string ID, look up its name
+                $hotel_id = sanitize_text_field($hotel);
+                $hotel_name = $available_hotels_map[$hotel_id] ?? $hotel_id;
+                $normalized[] = [
+                    'id' => $hotel_id,
+                    'name' => $hotel_name,
+                ];
+            } elseif (is_array($hotel) && !empty($hotel['id'])) {
+                // If hotel is already an object, just ensure both fields exist
+                $hotel_id = sanitize_text_field($hotel['id']);
+                $hotel_name = sanitize_text_field($hotel['name'] ?? '');
+                
+                // If no name provided, try to look it up
+                if ($hotel_name === '') {
+                    $hotel_name = $available_hotels_map[$hotel_id] ?? $hotel_id;
+                }
+                
+                $normalized[] = [
+                    'id' => $hotel_id,
+                    'name' => $hotel_name,
+                ];
+            }
+        }
+        
+        return $normalized;
+    }
+
     private function get_lighthouse_form_id(array $bar): string {
         return 'wp-mbb-mlb-form-' . sanitize_key($bar['id'] ?? uniqid('bar_', false));
     }
@@ -1430,6 +1472,9 @@ final class Mobile_Bottom_Bar_Plugin {
         if ((!empty($config['enableMultiHotel']) || !empty($config['allowMultipleHotels'])) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
             $label = __('Book', 'mobile-bottom-bar');
             
+            // Normalize hotels to ensure they all have both id and name
+            $normalized_hotels = $this->normalize_selected_hotels($config['selectedHotels']);
+            
             return [
                 'label' => $label,
                 'href' => '#',
@@ -1440,7 +1485,7 @@ final class Mobile_Bottom_Bar_Plugin {
                 'type' => 'mylighthouse-multi',
                 'payload' => [
                     'formId' => $form_id,
-                    'hotels' => $config['selectedHotels'],
+                    'hotels' => $normalized_hotels,
                     'isMultiple' => true,
                 ],
                 'linkTargetBehavior' => 'self',
