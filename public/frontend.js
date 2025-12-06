@@ -197,34 +197,47 @@
     fallbackInputs.appendChild(departureNative);
 
     function loadEasepickRange(cb) {
-      const hasRange = (window.easepick && typeof window.easepick.create === 'function' && window.easepick.RangePlugin);
+      const hasRange = (window.easepick && typeof window.easepick.create === 'function' && (window.easepick.RangePlugin || (window.easepick.plugins && window.easepick.plugins.RangePlugin)));
       if (hasRange) {
         cb(true);
         return;
       }
 
-      const scripts = [
-        'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.umd.min.js',
-        'https://cdn.jsdelivr.net/npm/@easepick/range-plugin@1.2.1/dist/index.umd.min.js',
-      ];
+      // Ensure core CSS is present
+      const cssHref = 'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.css';
+      const cssAlready = Array.from(document.styleSheets || []).some(s => (s.href || '').includes('easepick/core'));
+      if (!cssAlready) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = cssHref;
+        document.head.appendChild(link);
+      }
 
-      let loaded = 0;
-      scripts.forEach(function (src) {
+      function loadScriptSequential(srcs, done) {
+        if (!srcs.length) {
+          done();
+          return;
+        }
+        const [first, ...rest] = srcs;
         const tag = document.createElement('script');
-        tag.src = src;
+        tag.src = first;
         tag.async = true;
         tag.onload = function () {
-          loaded += 1;
-          if (loaded === scripts.length) {
-            const ok = (window.easepick && typeof window.easepick.create === 'function' && window.easepick.RangePlugin);
-            cb(ok);
-          }
+          loadScriptSequential(rest, done);
         };
         tag.onerror = function () {
-          console.warn('[Mobile Bottom Bar] Failed to load easepick script', src);
-          cb(false);
+          console.warn('[Mobile Bottom Bar] Failed to load easepick script', first);
+          done(false);
         };
         document.head.appendChild(tag);
+      }
+
+      loadScriptSequential([
+        'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.umd.min.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/range-plugin@1.2.1/dist/index.umd.min.js',
+      ], function () {
+        const ok = (window.easepick && typeof window.easepick.create === 'function' && (window.easepick.RangePlugin || (window.easepick.plugins && window.easepick.plugins.RangePlugin)));
+        cb(ok);
       });
     }
 
