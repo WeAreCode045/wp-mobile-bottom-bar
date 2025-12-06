@@ -928,7 +928,7 @@ final class Mobile_Bottom_Bar_Plugin {
             $item_classes[] = 'is-active';
         }
 
-        if (!empty($item['type']) && $item['type'] === 'mylighthouse') {
+        if (!empty($item['type']) && in_array($item['type'], ['mylighthouse', 'mylighthouse-multi'], true)) {
             $item_classes[] = 'wp-mbb__item--calendar';
         }
 
