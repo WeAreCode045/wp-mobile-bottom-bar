@@ -1481,27 +1481,36 @@ final class Mobile_Bottom_Bar_Plugin {
 
         $form_id = $this->get_lighthouse_form_id($bar);
 
-        // Handle multiple hotels mode - render a single form (hotel selector will be injected by JS)
+        // Handle multiple hotels mode - don't render form, JS will handle hotel selection
         if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
-            $first_hotel = $config['selectedHotels'][0];
-            $first_hotel_id = $first_hotel['id'] ?? '';
-            $first_hotel_name = $first_hotel['name'] ?? '';
+            // For multi-hotel mode, we render separate forms for each hotel
+            foreach ($config['selectedHotels'] as $hotel) {
+                $hotel_id = $hotel['id'] ?? '';
+                $hotel_name = $hotel['name'] ?? '';
+                
+                if ($hotel_id === '') {
+                    continue;
+                }
 
-            echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-multi-hotel="true">';
-            echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
-            echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type wp-mbb-multi-hotel-form" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($first_hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($first_hotel_name) . '" data-room-name="">';
-            echo '<input type="hidden" name="hotel_id" value="' . esc_attr($first_hotel_id) . '" />';
-            echo '<input type="hidden" name="room_id" value="" />';
-            echo '<input type="hidden" name="hotel_name" value="' . esc_attr($first_hotel_name) . '" />';
-            echo '<input type="hidden" name="room_name" value="" />';
-            echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
-            echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
-            echo '<div class="form-actions">';
-            echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
-            echo '</div>';
-            echo '</form>';
-            echo '</div>';
-            echo '</div>';
+                $single_form_id = $form_id . '-hotel-' . sanitize_key($hotel_id);
+                $hotel_name_safe = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Hotel', 'mobile-bottom-bar');
+
+                echo '<div class="wp-mbb__mylighthouse-scaffold wp-mbb__mylighthouse-scaffold--multi" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-hotel-id="' . esc_attr($hotel_id) . '">';
+                echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
+                echo '<form id="' . esc_attr($single_form_id) . '" class="mlb-form mlb-room-form-type" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($hotel_name_safe) . '" data-room-name="">';
+                echo '<input type="hidden" name="hotel_id" value="' . esc_attr($hotel_id) . '" />';
+                echo '<input type="hidden" name="room_id" value="" />';
+                echo '<input type="hidden" name="hotel_name" value="' . esc_attr($hotel_name_safe) . '" />';
+                echo '<input type="hidden" name="room_name" value="" />';
+                echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
+                echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
+                echo '<div class="form-actions">';
+                echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
+                echo '</div>';
+                echo '</form>';
+                echo '</div>';
+                echo '</div>';
+            }
             return;
         }
 

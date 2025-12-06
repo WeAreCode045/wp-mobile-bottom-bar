@@ -88,20 +88,21 @@
       return false;
     }
 
-    var form = document.getElementById(payload.formId);
+    // Construct the correct form ID
+    var formId = payload.formId;
+    if (selectedHotelId) {
+      formId = payload.formId + '-hotel-' + selectedHotelId;
+    }
+
+    console.log('[Mobile Bottom Bar] Looking for form:', formId);
+    var form = document.getElementById(formId);
 
     if (!form) {
+      console.warn('[Mobile Bottom Bar] Form not found:', formId);
       return false;
     }
 
-    // If a hotel was selected, update the form with that hotel
-    if (selectedHotelId) {
-      var hotelIdField = form.querySelector('input[name="hotel_id"]');
-      if (hotelIdField) {
-        hotelIdField.value = selectedHotelId;
-      }
-      form.setAttribute('data-hotel-id', selectedHotelId);
-    }
+    console.log('[Mobile Bottom Bar] Form found, triggering calendar');
 
     try {
       document.dispatchEvent(new CustomEvent('mlb-maybe-init-modal', { detail: { form: form } }));
@@ -112,6 +113,7 @@
     var trigger = form.querySelector('[data-trigger-modal="true"]') || form.querySelector('.mlb-book-room-btn');
 
     if (!trigger) {
+      console.warn('[Mobile Bottom Bar] Trigger button not found in form');
       return false;
     }
 
@@ -149,27 +151,13 @@
         const hotelId = hotel.id;
         const hotelName = hotel.name;
         
-        // Update form with selected hotel
-        var form = document.getElementById(payload.formId);
-        if (form) {
-          form.setAttribute('data-hotel-id', hotelId);
-          form.setAttribute('data-hotel-name', hotelName);
-          
-          var hotelIdField = form.querySelector('input[name="hotel_id"]');
-          if (hotelIdField) {
-            hotelIdField.value = hotelId;
-          }
-          
-          var hotelNameField = form.querySelector('input[name="hotel_name"]');
-          if (hotelNameField) {
-            hotelNameField.value = hotelName;
-          }
-        }
+        console.log('[Mobile Bottom Bar] Hotel selected:', hotelId, hotelName);
         
         // Close hotel selection modal
         closeHotelSelectionModal(hotelModalRefs);
         
         // Open calendar modal with selected hotel
+        // The form ID will be constructed as: formId + '-hotel-' + hotelId
         triggerLighthouseCalendar(payload, hotelId);
       });
 
