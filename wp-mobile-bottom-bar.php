@@ -152,6 +152,15 @@ final class Mobile_Bottom_Bar_Plugin {
             self::VERSION,
             true
         );
+
+        // Pass plugin URL to frontend.js for loading vendor assets
+        wp_localize_script(
+            'mobile-bottom-bar-frontend-js',
+            'wpMbbConfig',
+            [
+                'pluginUrl' => plugin_dir_url(__FILE__)
+            ]
+        );
     }
 
     public function register_rest_routes(): void {

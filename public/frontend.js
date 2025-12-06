@@ -170,27 +170,45 @@
     calendarHost.className = 'wp-mbb-hotel-selector__calendar';
 
     function loadEasepickRange(cb) {
-      // Easepick scripts are enqueued in the page header, check if available
+      // Check if easepick is already loaded
       if (window.easepick && typeof window.easepick.create === 'function') {
         console.log('[Mobile Bottom Bar] Easepick immediately available:', window.easepick);
         cb(true);
         return;
       }
 
-      // Poll with timeout for script loading
-      let attempts = 0;
-      const checkInterval = setInterval(function () {
-        attempts++;
-        if (window.easepick && typeof window.easepick.create === 'function') {
-          clearInterval(checkInterval);
-          console.log('[Mobile Bottom Bar] Easepick loaded after', attempts * 50, 'ms');
-          cb(true);
-        } else if (attempts >= 60) {  // 60 * 50ms = 3 seconds
-          clearInterval(checkInterval);
-          console.error('[Mobile Bottom Bar] Easepick failed to load within 3s');
-          cb(false);
-        }
-      }, 50);
+      // Load easepick scripts from local vendor directory
+      const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
+        ? wpMbbConfig.pluginUrl 
+        : '/wp-content/plugins/wp-mobile-bottom-bar/';
+      
+      function loadScript(src, callback) {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = callback;
+        script.onerror = function() {
+          console.error('[Mobile Bottom Bar] Failed to load script:', src);
+          callback(false);
+        };
+        document.head.appendChild(script);
+      }
+
+      // Load datetime dependency first, then core, then range plugin
+      console.log('[Mobile Bottom Bar] Loading easepick from local vendor directory');
+      loadScript('https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js', function() {
+        loadScript('https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js', function() {
+          loadScript(pluginUrl + 'public/vendor/easepick/easepick.js', function() {
+            loadScript(pluginUrl + 'public/vendor/easepick/easepick-range.js', function() {
+              // Give scripts time to initialize
+              setTimeout(function() {
+                const ok = (window.easepick && typeof window.easepick.create === 'function');
+                console.log('[Mobile Bottom Bar] Easepick load complete:', ok, window.easepick);
+                cb(ok);
+              }, 100);
+            });
+          });
+        });
+      });
     }
 
     function showErrorNotification(message) {
@@ -260,13 +278,16 @@
 
     // Inject styles for the multi-hotel modal if not already present
     (function injectStyles() {
-      // Ensure easepick CSS is loaded
+      // Ensure easepick CSS is loaded from local vendor directory
       const easepickCssId = 'wp-mbb-easepick-css';
       if (!document.getElementById(easepickCssId)) {
         const link = document.createElement('link');
         link.id = easepickCssId;
         link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.css';
+        const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
+          ? wpMbbConfig.pluginUrl 
+          : '/wp-content/plugins/wp-mobile-bottom-bar/';
+        link.href = pluginUrl + 'public/vendor/easepick/easepick.css';
         document.head.appendChild(link);
       }
 
