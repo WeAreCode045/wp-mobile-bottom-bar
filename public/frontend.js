@@ -197,25 +197,27 @@
     fallbackInputs.appendChild(departureNative);
 
     function loadEasepickRange(cb) {
-      // Easepick scripts are enqueued by WordPress, so we just need to wait for them
-      // The scripts should be available immediately since they're registered as dependencies
+      // Easepick scripts are enqueued in the page header, check if available
+      if (window.easepick && typeof window.easepick.create === 'function') {
+        console.log('[Mobile Bottom Bar] Easepick immediately available:', window.easepick);
+        cb(true);
+        return;
+      }
+
+      // Fallback: poll with timeout for script loading
+      let attempts = 0;
       const checkInterval = setInterval(function () {
+        attempts++;
         if (window.easepick && typeof window.easepick.create === 'function') {
           clearInterval(checkInterval);
-          console.log('[Mobile Bottom Bar] Easepick available:', window.easepick);
+          console.log('[Mobile Bottom Bar] Easepick loaded after', attempts * 50, 'ms');
           cb(true);
+        } else if (attempts >= 60) {  // 60 * 50ms = 3 seconds
+          clearInterval(checkInterval);
+          console.warn('[Mobile Bottom Bar] Easepick failed to load within 3s');
+          cb(false);
         }
       }, 50);
-
-      // Timeout after 3 seconds if easepick doesn't load
-      setTimeout(function () {
-        clearInterval(checkInterval);
-        const ok = (window.easepick && typeof window.easepick.create === 'function');
-        if (!ok) {
-          console.warn('[Mobile Bottom Bar] Easepick failed to load, using fallback');
-        }
-        cb(ok);
-      }, 3000);
     }
 
     function initRangePicker() {
