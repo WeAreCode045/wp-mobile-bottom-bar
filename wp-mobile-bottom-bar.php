@@ -925,12 +925,62 @@ final class Mobile_Bottom_Bar_Plugin {
             return;
         }
         
+        // Enqueue easepick assets for the multi-hotel modal
+        $this->enqueue_easepick_assets();
+        
         $template_path = plugin_dir_path(__FILE__) . 'templates/multi-hotel-modal.php';
         
         if (file_exists($template_path)) {
             include $template_path;
             $rendered = true;
         }
+    }
+
+    private function enqueue_easepick_assets(): void {
+        $plugin_url = plugin_dir_url(__FILE__);
+        
+        // Enqueue easepick CSS from local vendor directory
+        wp_enqueue_style(
+            'wp-mbb-easepick',
+            $plugin_url . 'public/vendor/easepick/easepick.css',
+            [],
+            '1.2.1'
+        );
+        
+        // Enqueue easepick dependencies from CDN
+        wp_enqueue_script(
+            'easepick-datetime',
+            'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
+            [],
+            '1.2.1',
+            true
+        );
+        
+        wp_enqueue_script(
+            'easepick-base-plugin',
+            'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
+            ['easepick-datetime'],
+            '1.2.1',
+            true
+        );
+        
+        // Enqueue easepick core from local vendor directory
+        wp_enqueue_script(
+            'wp-mbb-easepick-core',
+            $plugin_url . 'public/vendor/easepick/easepick.js',
+            ['easepick-datetime', 'easepick-base-plugin'],
+            '1.2.1',
+            true
+        );
+        
+        // Enqueue easepick range plugin from local vendor directory
+        wp_enqueue_script(
+            'wp-mbb-easepick-range',
+            $plugin_url . 'public/vendor/easepick/easepick-range.js',
+            ['wp-mbb-easepick-core'],
+            '1.2.1',
+            true
+        );
     }
 
     private function normalize_layout(string $layout): string {

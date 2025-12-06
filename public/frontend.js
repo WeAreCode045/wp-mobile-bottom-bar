@@ -112,61 +112,7 @@
     return true;
   }
 
-  function loadEasepickAssets(callback) {
-    // Check if already loaded
-    if (window.easepick && window.easepick.create && document.getElementById('wp-mbb-easepick-css')) {
-      console.log('[Mobile Bottom Bar] Easepick assets already loaded');
-      if (callback) callback();
-      return;
-    }
-
-    console.log('[Mobile Bottom Bar] Loading easepick assets...');
-    const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
-      ? wpMbbConfig.pluginUrl 
-      : '/wp-content/plugins/wp-mobile-bottom-bar/';
-    
-    // Load CSS first
-    if (!document.getElementById('wp-mbb-easepick-css')) {
-      const cssLink = document.createElement('link');
-      cssLink.id = 'wp-mbb-easepick-css';
-      cssLink.rel = 'stylesheet';
-      cssLink.href = pluginUrl + 'public/vendor/easepick/easepick.css';
-      document.head.appendChild(cssLink);
-      console.log('[Mobile Bottom Bar] Easepick CSS loaded from:', cssLink.href);
-    }
-    
-    // Load scripts sequentially
-    const scripts = [
-      'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
-      'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
-      pluginUrl + 'public/vendor/easepick/easepick.js',
-      pluginUrl + 'public/vendor/easepick/easepick-range.js'
-    ];
-    
-    let loadedCount = 0;
-    
-    function loadScriptSequentially(urls, index) {
-      if (index >= urls.length) {
-        console.log('[Mobile Bottom Bar] All easepick scripts loaded successfully');
-        if (callback) callback();
-        return;
-      }
-      
-      const script = document.createElement('script');
-      script.src = urls[index];
-      script.onload = function() {
-        console.log('[Mobile Bottom Bar] Loaded:', urls[index]);
-        loadScriptSequentially(urls, index + 1);
-      };
-      script.onerror = function() {
-        console.error('[Mobile Bottom Bar] Failed to load:', urls[index]);
-        loadScriptSequentially(urls, index + 1); // Continue anyway
-      };
-      document.head.appendChild(script);
-    }
-    
-    loadScriptSequentially(scripts, 0);
-  }
+  // Easepick assets are now enqueued via PHP when the modal template is rendered
 
   function openHotelSelectionModal(hotelModalRefs, hotels, payload) {
     if (!hotelModalRefs) {
@@ -368,16 +314,14 @@
       document.head.appendChild(style);
     })();
 
-    // Load easepick assets first, then initialize calendar
-    loadEasepickAssets(function() {
-      loadEasepickRange(function (ok) {
-        if (!ok) {
-          console.error('[Mobile Bottom Bar] Easepick library unavailable');
-          showErrorNotification('Date calendar failed to load. Please refresh the page and try again.');
-          return;
-        }
-        initRangePicker();
-      });
+    // Initialize calendar (easepick assets already enqueued via PHP)
+    loadEasepickRange(function (ok) {
+      if (!ok) {
+        console.error('[Mobile Bottom Bar] Easepick library unavailable');
+        showErrorNotification('Date calendar failed to load. Please refresh the page and try again.');
+        return;
+      }
+      initRangePicker();
     });
 
     // Attach CTA button handler (button already exists in template)
