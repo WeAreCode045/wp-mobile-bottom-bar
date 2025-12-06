@@ -368,11 +368,26 @@
       this.statusEl.textContent = message;
       this.statusEl.className = 'wp-mbb-status-message ' + type;
       this.statusEl.style.display = 'inline-block';
+      this.statusEl.style.animation = 'none';
+      
+      // Trigger reflow to restart animation
+      void this.statusEl.offsetWidth;
+      this.statusEl.style.animation = 'fadeInUp 0.3s ease-in-out';
 
+      // Log to console as well for debugging
       if (type === 'success') {
+        console.log('[Mobile Bottom Bar Admin] SUCCESS:', message);
+        // Auto-hide after 4 seconds
         setTimeout(() => {
-          this.statusEl.style.display = 'none';
-        }, 3000);
+          this.statusEl.style.animation = 'fadeOut 0.3s ease-in-out';
+          setTimeout(() => {
+            this.statusEl.style.display = 'none';
+          }, 300);
+        }, 4000);
+      } else if (type === 'error') {
+        console.error('[Mobile Bottom Bar Admin] ERROR:', message);
+      } else if (type === 'info') {
+        console.log('[Mobile Bottom Bar Admin] INFO:', message);
       }
     },
   };
