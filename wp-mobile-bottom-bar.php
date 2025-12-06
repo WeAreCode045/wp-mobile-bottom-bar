@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Mobby - Mobile Bottom Bar
  * Description:       Build your own dynamic mobile bottom navigation bar from the WordPress dashboard.
- * Version:           2.0.1
+ * Version:           1.1.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Code045
@@ -32,7 +32,6 @@ final class Mobile_Bottom_Bar_Plugin {
         'mail' => '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a2 2 0 0 1-2.06 0L2 7"/>' ,
         'map' => '<path d="M3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><path d="M9 3v15"/><path d="M15 6v15"/>' ,
         'calendar' => '<path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/>' ,
-        'hotel' => '<rect x="2" y="7" width="20" height="15" rx="2"/><path d="M2 7V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2"/><rect x="6" y="11" width="3" height="3"/><rect x="15" y="11" width="3" height="3"/>' ,
     ];
     private const SUPPORTED_LAYOUTS = ['standard', 'centered', 'floating', 'divided', 'compact', 'large'];
     private $mylighthouse_bootstrap = null;
@@ -71,8 +70,7 @@ final class Mobile_Bottom_Bar_Plugin {
     }
 
     public function render_app(): void {
-        // Include the new PHP admin template
-        include plugin_dir_path(__FILE__) . 'admin/class-admin-page.php';
+        echo '<div class="wrap"><div id="mobile-bottom-bar-root"></div></div>';
     }
 
     public function enqueue_assets(string $hook): void {
@@ -80,38 +78,46 @@ final class Mobile_Bottom_Bar_Plugin {
             return;
         }
 
-        // Enqueue admin CSS
-        wp_enqueue_style(
-            'wp-mbb-admin',
-            plugin_dir_url(__FILE__) . 'admin/admin.css',
-            [],
-            self::VERSION
-        );
+        $entry = $this->get_manifest_entry();
+        $asset_base = plugin_dir_url(__FILE__) . 'build/';
 
-        // Enqueue admin JS
+        if (!$entry) {
+            wp_enqueue_script(self::SCRIPT_HANDLE, '', [], self::VERSION, true);
+            wp_add_inline_script(self::SCRIPT_HANDLE, 'console.error("Mobile Bottom Bar assets missing. Run npm run build before loading the admin page.");');
+            return;
+        }
+
         wp_enqueue_script(
-            'wp-mbb-admin',
-            plugin_dir_url(__FILE__) . 'admin/admin.js',
+            self::SCRIPT_HANDLE,
+            $asset_base . $entry['file'],
             [],
             self::VERSION,
             true
         );
 
-        // Localize script with API settings
+        if (!empty($entry['css'])) {
+            foreach ($entry['css'] as $index => $css_file) {
+                wp_enqueue_style(
+                    self::SCRIPT_HANDLE . ($index ? "-{$index}" : ''),
+                    $asset_base . $css_file,
+                    [],
+                    self::VERSION
+                );
+            }
+        }
+
         wp_localize_script(
-            'wp-mbb-admin',
-            'wp',
+            self::SCRIPT_HANDLE,
+            'mobileBottomBarData',
             [
-                'apiSettings' => [
-                    'root' => esc_url_raw(rest_url()),
-                    'nonce' => wp_create_nonce('wp_rest'),
-                ],
+                'restUrl' => esc_url_raw(rest_url('mobile-bottom-bar/v1/settings')),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'menus' => $this->get_menus(),
+                'pages' => $this->get_page_options(),
+                'settings' => $this->get_settings(),
+                'mylighthouse' => $this->get_mylighthouse_bootstrap(),
             ]
         );
-
-        // Enqueue color picker
-        wp_enqueue_script('wp-color-picker');
-        wp_enqueue_style('wp-color-picker');
     }
 
     public function enqueue_frontend_assets(): void {
@@ -149,31 +155,23 @@ final class Mobile_Bottom_Bar_Plugin {
     }
 
     public function register_rest_routes(): void {
-        $namespace = 'mobile-bottom-bar/v1';
-        $route = '/settings';
-
-        error_log('[Mobile Bottom Bar] register_rest_routes() called');
-
-        $args = [
+        register_rest_route(
+            'mobile-bottom-bar/v1',
+            '/settings',
             [
-                'methods' => \WP_REST_Server::READABLE,
-                'callback' => [$this, 'rest_get_settings'],
-                'permission_callback' => [$this, 'permissions_check'],
-            ],
-            [
-                'methods' => \WP_REST_Server::CREATABLE,
-                'callback' => [$this, 'rest_save_settings'],
-                'permission_callback' => [$this, 'permissions_check'],
-                'schema' => $this->get_rest_schema(),
-            ],
-        ];
-
-        $result = register_rest_route($namespace, $route, $args);
-        
-        error_log('[Mobile Bottom Bar] register_rest_route() returned: ' . var_export($result, true));
-        error_log('[Mobile Bottom Bar] Route namespace: ' . $namespace);
-        error_log('[Mobile Bottom Bar] Route path: ' . $route);
-        error_log('[Mobile Bottom Bar] Full route would be: /wp-json/' . $namespace . $route);
+                [
+                    'methods' => 'GET',
+                    'callback' => [$this, 'rest_get_settings'],
+                    'permission_callback' => [$this, 'permissions_check'],
+                ],
+                [
+                    'methods' => 'POST',
+                    'callback' => [$this, 'rest_save_settings'],
+                    'permission_callback' => [$this, 'permissions_check'],
+                    'args' => $this->get_rest_args(),
+                ],
+            ]
+        );
     }
 
     public function rest_get_settings(): array {
@@ -181,118 +179,15 @@ final class Mobile_Bottom_Bar_Plugin {
     }
 
     public function rest_save_settings(\WP_REST_Request $request): \WP_REST_Response {
-        $incoming_data = (array) $request->get_json_params();
-        
-        error_log('[Mobile Bottom Bar] REST save_settings called with data: ' . json_encode($incoming_data));
-        
-        // Get existing settings
-        $existing_settings = $this->get_settings();
-        
-        // Merge incoming data with existing settings
-        // This allows partial updates (e.g., updating just the bars)
-        $merged_data = array_merge($existing_settings, $incoming_data);
-        
-        // Special handling for bars: merge bars instead of replacing them
-        if (!empty($incoming_data['bars']) && !empty($existing_settings['bars'])) {
-            $merged_data['bars'] = array_merge($existing_settings['bars'], $incoming_data['bars']);
-        }
-        
-        error_log('[Mobile Bottom Bar] Merged data: ' . json_encode($merged_data));
-        
-        // Sanitize the merged data
-        $data = $this->sanitize_settings($merged_data);
+        $data = $this->sanitize_settings((array) $request->get_json_params());
 
-        $updated = update_option(self::OPTION_KEY, $data);
-        
-        error_log('[Mobile Bottom Bar] Option updated: ' . ($updated ? 'true' : 'false'));
+        update_option(self::OPTION_KEY, $data);
 
-        return new \WP_REST_Response([
-            'success' => true,
-            'data' => $data,
-            'message' => 'Settings saved successfully',
-        ], 200);
+        return new \WP_REST_Response($data, 200);
     }
 
-    public function permissions_check() {
-        if (!current_user_can('manage_options')) {
-            return new \WP_Error('rest_forbidden', 'Only administrators can access this endpoint.', ['status' => 403]);
-        }
-        return true;
-    }
-
-    public function get_page_assignment_mode(array $bar): string {
-        $assigned_pages = $bar['assignedPages'] ?? [];
-        
-        if (empty($assigned_pages)) {
-            return 'all';
-        }
-        
-        return 'specific';
-    }
-
-    public function get_assigned_page_ids(array $bar): array {
-        $assigned_pages = $bar['assignedPages'] ?? [];
-        $page_ids = [];
-        
-        foreach ($assigned_pages as $assignment) {
-            if (is_array($assignment) && isset($assignment['pageId'])) {
-                $page_ids[] = $assignment['pageId'];
-            }
-        }
-        
-        return $page_ids;
-    }
-
-    public function render_page_tree(array $pages, array $assigned_pages, int $depth = 0): void {
-        if (empty($pages)) {
-            return;
-        }
-
-        // Group pages by parent
-        $parent_groups = [];
-        foreach ($pages as $page) {
-            $parent_id = $page['parentId'] ?? null;
-            if (!isset($parent_groups[$parent_id])) {
-                $parent_groups[$parent_id] = [];
-            }
-            $parent_groups[$parent_id][] = $page;
-        }
-
-        // Render root pages
-        if (isset($parent_groups[null])) {
-            foreach ($parent_groups[null] as $page) {
-                $page_id = $page['id'];
-                $is_checked = in_array($page_id, $assigned_pages, true);
-                $has_children = $page['hasChildren'] ?? false;
-                $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $depth);
-                
-                echo '<div style="padding: 5px 10px; border-bottom: 1px solid #e0e0e0;">';
-                echo '<label style="display: flex; align-items: center; cursor: pointer;">';
-                echo '<input type="checkbox" name="assigned_pages[]" value="' . esc_attr($page_id) . '" ' . checked($is_checked) . '>';
-                echo '<span style="margin-left: 8px;">' . esc_html($page['title']) . '</span>';
-                if ($has_children) {
-                    echo '<span style="margin-left: 8px; font-size: 11px; color: #999;">(' . count($parent_groups[$page_id] ?? []) . ')</span>';
-                }
-                echo '</label>';
-                
-                // Render child pages
-                if ($has_children && isset($parent_groups[$page_id])) {
-                    foreach ($parent_groups[$page_id] as $child_page) {
-                        $child_id = $child_page['id'];
-                        $child_checked = in_array($child_id, $assigned_pages, true);
-                        
-                        echo '<div style="padding: 5px 10px; padding-left: 30px; background: #fafafa;">';
-                        echo '<label style="display: flex; align-items: center; cursor: pointer;">';
-                        echo '<input type="checkbox" name="assigned_pages[]" value="' . esc_attr($child_id) . '" ' . checked($child_checked) . '>';
-                        echo '<span style="margin-left: 8px; font-size: 13px;">' . esc_html($child_page['title']) . '</span>';
-                        echo '</label>';
-                        echo '</div>';
-                    }
-                }
-                
-                echo '</div>';
-            }
-        }
+    public function permissions_check(): bool {
+        return current_user_can('manage_options');
     }
 
     private function get_manifest_entry(): ?array {
@@ -394,47 +289,27 @@ final class Mobile_Bottom_Bar_Plugin {
 
     private function ensure_valid_bars($bars): array {
         if (!is_array($bars)) {
-            $default = $this->get_default_bar();
-            return [
-                $default['id'] => $default,
-            ];
+            return [$this->get_default_bar()];
         }
 
-        // Check if this is an associative array (keyed by bar ID)
-        $is_associative = !empty($bars) && array_keys($bars) !== range(0, count($bars) - 1);
+        $is_associative = array_keys($bars) !== range(0, count($bars) - 1);
+
+        if ($is_associative && (isset($bars['enabled']) || isset($bars['selectedMenu']))) {
+            $bars = [$bars];
+        }
 
         $sanitized = [];
 
-        if ($is_associative) {
-            // New format: { 'bar_id': {...bar data...}, 'bar_id_2': {...} }
-            foreach ($bars as $bar_id => $bar) {
-                if (!is_array($bar)) {
-                    continue;
-                }
-                
-                // Set the ID in the bar data for sanitization
-                $bar['id'] = $bar_id;
-                $sanitized[$bar_id] = $this->sanitize_bar($bar, 0);
+        foreach ($bars as $index => $bar) {
+            if (!is_array($bar)) {
+                continue;
             }
-        } else {
-            // Old format: [{...bar data...}, {...bar data...}]
-            foreach ($bars as $index => $bar) {
-                if (!is_array($bar)) {
-                    continue;
-                }
 
-                $sanitized_bar = $this->sanitize_bar($bar, (int) $index);
-                // Use the bar's ID as key (associative format)
-                $bar_id = $sanitized_bar['id'] ?? 'mbb_' . uniqid();
-                $sanitized[$bar_id] = $sanitized_bar;
-            }
+            $sanitized[] = $this->sanitize_bar($bar, (int) $index);
         }
 
         if (empty($sanitized)) {
-            $default = $this->get_default_bar();
-            $sanitized = [
-                $default['id'] => $default,
-            ];
+            $sanitized[] = $this->get_default_bar();
         }
 
         return $sanitized;
@@ -803,8 +678,6 @@ final class Mobile_Bottom_Bar_Plugin {
             'enabled' => false,
             'hotelId' => '',
             'hotelName' => '',
-            'enableMultiHotel' => false,
-            'selectedHotels' => [],
         ];
 
         if (!is_array($value)) {
@@ -814,26 +687,8 @@ final class Mobile_Bottom_Bar_Plugin {
         $enabled = !empty($value['enabled']);
         $hotel_id = sanitize_text_field($value['hotelId'] ?? '');
         $hotel_name = sanitize_text_field($value['hotelName'] ?? '');
-        $enable_multi_hotel = !empty($value['enableMultiHotel']);
-        $selected_hotels = $value['selectedHotels'] ?? [];
-        
-        // Sanitize selected hotels array
-        if (is_array($selected_hotels)) {
-            $selected_hotels = array_map('sanitize_text_field', $selected_hotels);
-        } else {
-            $selected_hotels = [];
-        }
 
-        // Validate: must be enabled, and either have a hotelId (including __multi-hotel__) or be in multi-hotel mode with selectedHotels
-        if (!$enabled) {
-            return $defaults;
-        }
-
-        // Allow if: has a specific hotelId (including __multi-hotel__), OR in multi-hotel mode with selected hotels
-        $has_valid_hotel = ($hotel_id !== '' && $hotel_id !== '__multi-hotel__');
-        $is_multi_hotel_with_selections = ($hotel_id === '__multi-hotel__' || ($enable_multi_hotel && !empty($selected_hotels)));
-        
-        if (!$has_valid_hotel && !$is_multi_hotel_with_selections) {
+        if (!$enabled || $hotel_id === '') {
             return $defaults;
         }
 
@@ -841,8 +696,6 @@ final class Mobile_Bottom_Bar_Plugin {
             'enabled' => true,
             'hotelId' => $hotel_id,
             'hotelName' => $hotel_name,
-            'enableMultiHotel' => $enable_multi_hotel,
-            'selectedHotels' => $selected_hotels,
         ];
     }
 
@@ -892,36 +745,6 @@ final class Mobile_Bottom_Bar_Plugin {
                 'type' => 'object',
                 'required' => false,
             ],
-        ];
-    }
-
-    private function get_rest_schema(): array {
-        return [
-            '$schema' => 'http://json-schema.org/draft-04/schema#',
-            'title' => 'Mobile Bottom Bar Settings',
-            'type' => 'object',
-            'properties' => [
-                'bars' => [
-                    'type' => 'object',
-                    'additionalProperties' => true,
-                ],
-                'globalStyle' => [
-                    'type' => 'object',
-                    'additionalProperties' => true,
-                ],
-                'defaultCustomMenu' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'additionalProperties' => true,
-                    ],
-                ],
-                'defaultModalStyle' => [
-                    'type' => 'object',
-                    'additionalProperties' => true,
-                ],
-            ],
-            'additionalProperties' => true,
         ];
     }
 
@@ -1080,10 +903,6 @@ final class Mobile_Bottom_Bar_Plugin {
 
         if (!empty($item['linkTargetBehavior'])) {
             $data_attributes .= ' data-link-target="' . esc_attr($item['linkTargetBehavior']) . '"';
-        }
-
-        if (!empty($item['data-enable-multi-hotel'])) {
-            $data_attributes .= ' data-enable-multi-hotel="' . esc_attr($item['data-enable-multi-hotel']) . '"';
         }
 
         $label_markup = '';
@@ -1520,12 +1339,7 @@ final class Mobile_Bottom_Bar_Plugin {
             return false;
         }
 
-        $is_enabled = !empty($config['enabled']);
-        $has_hotel_id = !empty($config['hotelId']);
-        $is_multi_hotel = !empty($config['enableMultiHotel']);
-
-        // Allow button if: enabled AND (has hotelId OR is in multi-hotel mode with selectedHotels)
-        if (!$is_enabled || (!$has_hotel_id && (!$is_multi_hotel || empty($config['selectedHotels'])))) {
+        if (empty($config['enabled']) || empty($config['hotelId'])) {
             return false;
         }
 
@@ -1554,13 +1368,8 @@ final class Mobile_Bottom_Bar_Plugin {
     private function build_lighthouse_item(array $bar): ?array {
         $config = $bar['lighthouseIntegration'] ?? [];
         $hotel_id = $config['hotelId'] ?? '';
-        $enable_multi_hotel = !empty($config['enableMultiHotel']);
 
-        // Handle multi-hotel mode when hotelId is set to __multi-hotel__ or empty with enableMultiHotel
-        $is_multi_hotel_mode = ($hotel_id === '__multi-hotel__' || ($hotel_id === '' && $enable_multi_hotel));
-        
-        // If neither multi-hotel mode nor a specific hotel is set, don't show the button
-        if (!$is_multi_hotel_mode && $hotel_id === '') {
+        if ($hotel_id === '') {
             return null;
         }
 
@@ -1568,7 +1377,7 @@ final class Mobile_Bottom_Bar_Plugin {
         $label = is_string($label) && $label !== '' ? $label : __('Book', 'mobile-bottom-bar');
         $form_id = $this->get_lighthouse_form_id($bar);
 
-        $item = [
+        return [
             'label' => $label,
             'href' => '#',
             'icon' => 'calendar',
@@ -1578,49 +1387,10 @@ final class Mobile_Bottom_Bar_Plugin {
             'type' => 'mylighthouse',
             'payload' => [
                 'formId' => $form_id,
-                'hotelId' => $is_multi_hotel_mode ? '' : $hotel_id,
+                'hotelId' => $hotel_id,
             ],
             'linkTargetBehavior' => 'self',
         ];
-
-        // Add selected hotels list if in multi-hotel mode
-        if ($is_multi_hotel_mode) {
-            $item['data-enable-multi-hotel'] = 'true';
-            $selected_hotels = $config['selectedHotels'] ?? [];
-            
-            // Get full hotel objects for the selected hotel IDs
-            if (is_array($selected_hotels) && !empty($selected_hotels)) {
-                $meta = $this->get_mylighthouse_bootstrap();
-                $all_hotels = $meta['hotels'] ?? [];
-                
-                if (!empty($all_hotels) && is_array($all_hotels)) {
-                    $filtered_hotels = [];
-                    
-                    foreach ($all_hotels as $hotel) {
-                        $hotel_id_value = $hotel['id'] ?? '';
-                        if (!empty($hotel_id_value) && in_array($hotel_id_value, $selected_hotels, true)) {
-                            $filtered_hotels[] = $hotel;
-                        }
-                    }
-                    
-                    // Always add hotels to payload when in multi-hotel mode with selectedHotels
-                    if (!empty($filtered_hotels)) {
-                        $item['payload']['hotels'] = $filtered_hotels;
-                    } else {
-                        // Even if no hotels match, still add empty array to signal multi-hotel mode
-                        $item['payload']['hotels'] = [];
-                    }
-                } else {
-                    // If no hotels available, add empty array
-                    $item['payload']['hotels'] = [];
-                }
-            } else {
-                // If no selected hotels configured, add empty array
-                $item['payload']['hotels'] = [];
-            }
-        }
-
-        return $item;
     }
 
     private function render_lighthouse_form(array $bar): void {
@@ -1632,14 +1402,8 @@ final class Mobile_Bottom_Bar_Plugin {
         $booking_url = $meta['bookingPageUrl'] ?? '';
         $config = $bar['lighthouseIntegration'] ?? [];
         $hotel_id = $config['hotelId'] ?? '';
-        $is_multi_hotel_mode = ($hotel_id === '__multi-hotel__' || ($hotel_id === '' && !empty($config['enableMultiHotel'])));
 
-        if ($booking_url === '') {
-            return;
-        }
-        
-        // In multi-hotel mode, allow empty hotel_id; otherwise require it
-        if (!$is_multi_hotel_mode && $hotel_id === '') {
+        if ($booking_url === '' || $hotel_id === '') {
             return;
         }
 
@@ -1649,18 +1413,12 @@ final class Mobile_Bottom_Bar_Plugin {
 
         $form_id = $this->get_lighthouse_form_id($bar);
         $hotel_name = $config['hotelName'] ?? '';
-        
-        // In multi-hotel mode, use a placeholder; otherwise use the configured hotel name
-        if ($is_multi_hotel_mode) {
-            $hotel_name = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Select hotel', 'mobile-bottom-bar');
-        } else {
-            $hotel_name = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Selected hotel', 'mobile-bottom-bar');
-        }
+        $hotel_name = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Selected hotel', 'mobile-bottom-bar');
 
         echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '">';
         echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
-        echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($is_multi_hotel_mode ? '' : $hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($hotel_name) . '" data-room-name="">';
-        echo '<input type="hidden" name="hotel_id" value="' . esc_attr($is_multi_hotel_mode ? '' : $hotel_id) . '" />';
+        echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($hotel_name) . '" data-room-name="">';
+        echo '<input type="hidden" name="hotel_id" value="' . esc_attr($hotel_id) . '" />';
         echo '<input type="hidden" name="room_id" value="" />';
         echo '<input type="hidden" name="hotel_name" value="' . esc_attr($hotel_name) . '" />';
         echo '<input type="hidden" name="room_name" value="" />';

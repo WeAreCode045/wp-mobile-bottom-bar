@@ -62,79 +62,6 @@
       return false;
     }
 
-    // If a specific hotel ID was selected via multi-hotel selector, update the form
-    if (payload.selectedHotelId) {
-      console.log('[Mobile Bottom Bar] Setting hotel ID on form:', payload.selectedHotelId);
-
-      // Update the hidden input field
-      var hotelIdInput = form.querySelector('input[name="hotel_id"]');
-      if (hotelIdInput) {
-        hotelIdInput.value = payload.selectedHotelId;
-        console.log('[Mobile Bottom Bar] Updated hidden input hotel_id to:', hotelIdInput.value);
-      }
-
-      // Update the form data attribute
-      form.setAttribute('data-hotel-id', payload.selectedHotelId);
-      console.log('[Mobile Bottom Bar] Updated form data-hotel-id to:', form.getAttribute('data-hotel-id'));
-
-      // Find and update hotel name if available
-      var hotelNameInput = form.querySelector('input[name="hotel_name"]');
-      if (hotelNameInput && payload.selectedHotelName) {
-        hotelNameInput.value = payload.selectedHotelName;
-        form.setAttribute('data-hotel-name', payload.selectedHotelName);
-        console.log('[Mobile Bottom Bar] Updated hotel_name to:', hotelNameInput.value);
-      }
-
-      // Update the RoomBooking instance hotelId if it exists
-      if (window.MLB_RoomBooking && window.MLB_RoomBooking.instances && window.MLB_RoomBooking.instances.length > 0) {
-        var found = false;
-        window.MLB_RoomBooking.instances.forEach(function (instance) {
-          if (instance && instance.form === form) {
-            instance.hotelId = payload.selectedHotelId;
-            instance.hotelName = payload.selectedHotelName || instance.hotelName;
-            console.log('[Mobile Bottom Bar] Updated RoomBooking instance - hotelId:', instance.hotelId, 'hotelName:', instance.hotelName);
-            found = true;
-
-            // Store the hotelId on the form element itself as a data attribute for later sync
-            form.dataset.mbbSelectedHotelId = payload.selectedHotelId;
-          }
-        });
-        if (!found) {
-          console.warn('[Mobile Bottom Bar] No matching RoomBooking instance found for form, instances count:', window.MLB_RoomBooking.instances.length);
-          // Store on form for fallback
-          form.dataset.mbbSelectedHotelId = payload.selectedHotelId;
-        }
-      } else {
-        console.warn('[Mobile Bottom Bar] MLB_RoomBooking.instances not available');
-        // Store on form for fallback
-        form.dataset.mbbSelectedHotelId = payload.selectedHotelId;
-      }
-
-      // Add event listener to sync hotelId just before booking modal opens
-      var bookRoomBtn = form.querySelector('[data-trigger-modal="true"]') || form.querySelector('.mlb-book-room-btn');
-      if (bookRoomBtn) {
-        bookRoomBtn.addEventListener('click', function syncBeforeModal(e) {
-          console.log('[Mobile Bottom Bar] Book button clicked, syncing hotelId with current selection');
-          var currentHotelId = form.dataset.mbbSelectedHotelId || form.querySelector('input[name="hotel_id"]')?.value || form.getAttribute('data-hotel-id') || '';
-          var currentHotelName = form.querySelector('input[name="hotel_name"]')?.value || form.getAttribute('data-hotel-name') || '';
-
-          console.log('[Mobile Bottom Bar] Current form state - hotelId:', currentHotelId, 'hotelName:', currentHotelName);
-
-          if (currentHotelId && window.MLB_RoomBooking && window.MLB_RoomBooking.instances) {
-            window.MLB_RoomBooking.instances.forEach(function (instance) {
-              if (instance && instance.form === form) {
-                instance.hotelId = currentHotelId;
-                if (currentHotelName) {
-                  instance.hotelName = currentHotelName;
-                }
-                console.log('[Mobile Bottom Bar] Synced instance before modal - hotelId:', instance.hotelId, 'hotelName:', instance.hotelName);
-              }
-            });
-          }
-        });
-      }
-    }
-
     try {
       document.dispatchEvent(new CustomEvent('mlb-maybe-init-modal', { detail: { form: form } }));
     } catch (error) {
@@ -145,18 +72,6 @@
 
     if (!trigger) {
       return false;
-    }
-
-    console.log('[Mobile Bottom Bar] About to trigger click on:', trigger);
-    var hotelIdInputBeforeClick = form.querySelector('input[name="hotel_id"]');
-    console.log('[Mobile Bottom Bar] Form state before click - hotel_id input:', hotelIdInputBeforeClick?.value, 'data-hotel-id:', form.getAttribute('data-hotel-id'));
-
-    // Double-check that hotelId is set before clicking
-    if (payload && payload.selectedHotelId) {
-      if (hotelIdInputBeforeClick && !hotelIdInputBeforeClick.value) {
-        console.warn('[Mobile Bottom Bar] WARNING: hotel_id input is empty right before click, re-setting it to:', payload.selectedHotelId);
-        hotelIdInputBeforeClick.value = payload.selectedHotelId;
-      }
     }
 
     trigger.click();
@@ -186,40 +101,6 @@
     window.requestAnimationFrame(function () {
       closeButton.focus();
     });
-  }
-
-  function renderHotelSelector(body, hotels, onSelect) {
-    body.innerHTML = '';
-
-    if (!Array.isArray(hotels) || hotels.length === 0) {
-      body.innerHTML = '<p>No hotels available.</p>';
-      return;
-    }
-
-    const list = document.createElement('div');
-    list.className = 'wp-mbb-hotel-selector';
-
-    hotels.forEach(function (hotel) {
-      const hotelId = typeof hotel === 'object' ? hotel.id : hotel;
-      const hotelName = typeof hotel === 'object' ? hotel.name : hotel;
-
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'wp-mbb-hotel-selector__item';
-      button.textContent = hotelName;
-      button.dataset.hotelId = hotelId;
-      button.dataset.hotelName = hotelName;
-
-      button.addEventListener('click', function () {
-        if (typeof onSelect === 'function') {
-          onSelect(hotelId, hotelName);
-        }
-      });
-
-      list.appendChild(button);
-    });
-
-    body.appendChild(list);
   }
 
   function renderIframe(body, url) {
@@ -292,57 +173,7 @@
       if (type === 'mylighthouse') {
         event.preventDefault();
         const payload = parsePayload(target.dataset.payload);
-        const enableMultiHotel = target.dataset.enableMultiHotel === 'true';
-        const hasHotels = payload.hotels && Array.isArray(payload.hotels);
-
-        console.log('[Mobile Bottom Bar] MyLighthouse clicked:', {
-          enableMultiHotel,
-          hasHotels,
-          hotelsCount: payload.hotels?.length ?? 0,
-          payload,
-          dataAttribute: target.dataset.enableMultiHotel,
-        });
-
-        if (enableMultiHotel && hasHotels) {
-          console.log('[Mobile Bottom Bar] Showing hotel selector modal');
-          // Show hotel selector modal
-          const label = target.querySelector('.wp-mbb__label');
-          const fallbackTitle = label ? label.textContent : target.textContent || 'Select Hotel';
-
-          lastTrigger = target;
-
-          const onHotelSelect = function (hotelId, hotelName) {
-            console.log('[Mobile Bottom Bar] Hotel selected:', hotelId, hotelName);
-            // Trigger booking calendar with selected hotel
-            const selectedHotelPayload = Object.assign({}, payload, {
-              selectedHotelId: hotelId,
-              selectedHotelName: hotelName
-            });
-            triggerLighthouseCalendar(selectedHotelPayload);
-            closeOverlay(overlayRefs, lastTrigger);
-          };
-
-          // Show hotel selector in overlay
-          const { overlay, title, body, closeButton } = overlayRefs;
-          console.log('[Mobile Bottom Bar] Before showing overlay');
-          overlay.setAttribute('aria-hidden', 'false');
-          overlay.classList.add('is-visible');
-          document.body.classList.add('wp-mbb-overlay-active');
-          title.textContent = fallbackTitle;
-          console.log('[Mobile Bottom Bar] About to render hotel selector with', payload.hotels?.length, 'hotels');
-          renderHotelSelector(body, payload.hotels, onHotelSelect);
-          console.log('[Mobile Bottom Bar] Hotel selector rendered');
-
-          window.requestAnimationFrame(function () {
-            closeButton.focus();
-          });
-        } else {
-          console.log('[Mobile Bottom Bar] Directly triggering lighthouse calendar', {
-            reason: !enableMultiHotel ? 'enableMultiHotel is false' : 'hasHotels is false',
-          });
-          // Direct booking calendar trigger without hotel selection
-          triggerLighthouseCalendar(payload);
-        }
+        triggerLighthouseCalendar(payload);
         return;
       }
 
