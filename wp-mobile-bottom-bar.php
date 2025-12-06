@@ -1467,6 +1467,8 @@ final class Mobile_Bottom_Bar_Plugin {
     private function build_lighthouse_item(array $bar): ?array {
         $config = $bar['lighthouseIntegration'] ?? [];
         $form_id = $this->get_lighthouse_form_id($bar);
+        $meta = $this->get_mylighthouse_bootstrap();
+        $booking_url = $meta['bookingPageUrl'] ?? '';
 
         // Handle multiple hotels mode
         if ((!empty($config['enableMultiHotel']) || !empty($config['allowMultipleHotels'])) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
@@ -1487,6 +1489,7 @@ final class Mobile_Bottom_Bar_Plugin {
                     'formId' => $form_id,
                     'hotels' => $normalized_hotels,
                     'isMultiple' => true,
+                    'bookingUrl' => $booking_url,
                 ],
                 'linkTargetBehavior' => 'self',
             ];
