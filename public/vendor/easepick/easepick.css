@@ -282,13 +282,23 @@
 	color: var(--color-fg-accent);
 }
 .calendar > .days-grid > .day.selected {
-	background-color: #dc143c;
+	background-color: #dc143c	;
 	color: #ffffff;
 }
 .calendar > .days-grid > .day.in-range:hover {
 	background-color: #b5bbc4;
 	color: #000000;
 	border: none;
+}
+.calendar > .days-grid > .dayend {
+	background-color: #dc143c;
+	color: #ffffff;
+	cursor: default;
+}
+.calendar > .days-grid > .startend {
+	border-color: #dc143c;
+	color: #ffffff;
+	cursor: not-allowed;
 }
 @media (max-width: 480px) {
 	.container:not(.inline) {
