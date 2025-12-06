@@ -159,42 +159,15 @@
       select.appendChild(option);
     });
 
-    // Date range (inline calendar if available, fallback to native date inputs)
+    // Date range (easepick calendar only - no fallback)
     const datesWrapper = document.createElement('div');
     datesWrapper.className = 'wp-mbb-hotel-selector__dates';
 
     let arrivalValue = '';
     let departureValue = '';
 
-    const arrivalInput = document.createElement('input');
-    arrivalInput.type = 'hidden';
-    const departureInput = document.createElement('input');
-    departureInput.type = 'hidden';
-
     const calendarHost = document.createElement('div');
     calendarHost.className = 'wp-mbb-hotel-selector__calendar';
-
-    const fallbackInputs = document.createElement('div');
-    fallbackInputs.className = 'wp-mbb-hotel-selector__fallback';
-
-    const arrivalLabel = document.createElement('label');
-    arrivalLabel.textContent = 'Arrival';
-    arrivalLabel.className = 'wp-mbb-hotel-selector__label';
-    const arrivalNative = document.createElement('input');
-    arrivalNative.type = 'date';
-    arrivalNative.className = 'wp-mbb-hotel-selector__date-input';
-
-    const departureLabel = document.createElement('label');
-    departureLabel.textContent = 'Departure';
-    departureLabel.className = 'wp-mbb-hotel-selector__label';
-    const departureNative = document.createElement('input');
-    departureNative.type = 'date';
-    departureNative.className = 'wp-mbb-hotel-selector__date-input';
-
-    fallbackInputs.appendChild(arrivalLabel);
-    fallbackInputs.appendChild(arrivalNative);
-    fallbackInputs.appendChild(departureLabel);
-    fallbackInputs.appendChild(departureNative);
 
     function loadEasepickRange(cb) {
       // Easepick scripts are enqueued in the page header, check if available
@@ -204,7 +177,7 @@
         return;
       }
 
-      // Fallback: poll with timeout for script loading
+      // Poll with timeout for script loading
       let attempts = 0;
       const checkInterval = setInterval(function () {
         attempts++;
@@ -214,19 +187,24 @@
           cb(true);
         } else if (attempts >= 60) {  // 60 * 50ms = 3 seconds
           clearInterval(checkInterval);
-          console.warn('[Mobile Bottom Bar] Easepick failed to load within 3s');
+          console.error('[Mobile Bottom Bar] Easepick failed to load within 3s');
           cb(false);
         }
       }, 50);
     }
 
+    function showErrorNotification(message) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'wp-mbb-hotel-selector__error';
+      errorDiv.textContent = message;
+      datesWrapper.appendChild(errorDiv);
+    }
+
     function initRangePicker() {
       const easepickGlobal = (typeof window.easepick !== 'undefined') ? window.easepick : null;
       if (!easepickGlobal || typeof easepickGlobal.create !== 'function') {
-        console.warn('[Mobile Bottom Bar] Easepick not ready, using fallback');
-        datesWrapper.appendChild(fallbackInputs);
-        arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
-        departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+        console.error('[Mobile Bottom Bar] Easepick not available');
+        showErrorNotification('Calendar library failed to load. Please refresh the page and try again.');
         return;
       }
 
@@ -259,15 +237,12 @@
           },
         });
         if (!picker) {
-          datesWrapper.appendChild(fallbackInputs);
-          arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
-          departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+          console.error('[Mobile Bottom Bar] Failed to create picker instance');
+          showErrorNotification('Calendar initialization failed. Please refresh the page and try again.');
         }
       } catch (err) {
-        console.warn('[Mobile Bottom Bar] Failed to init range picker, fallback to native dates', err);
-        datesWrapper.appendChild(fallbackInputs);
-        arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
-        departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+        console.error('[Mobile Bottom Bar] Failed to init range picker:', err);
+        showErrorNotification('Calendar error: ' + err.message + '. Please refresh the page and try again.');
       }
     }
 
@@ -314,17 +289,14 @@
           font-size: 14px;
           background: white;
         }
-        .wp-mbb-hotel-selector__fallback {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .wp-mbb-hotel-selector__date-input {
-          width: 100%;
-          padding: 8px;
-          border: 1px solid #ccc;
+        .wp-mbb-hotel-selector__error {
+          padding: 12px;
+          background-color: #fee;
+          border: 1px solid #f88;
           border-radius: 4px;
+          color: #c33;
           font-size: 14px;
+          font-weight: 500;
         }
         .wp-mbb-hotel-selector__cta {
           margin-top: 10px;
@@ -342,10 +314,8 @@
 
     loadEasepickRange(function (ok) {
       if (!ok) {
-        console.log('[Mobile Bottom Bar] Easepick unavailable, using native date inputs');
-        datesWrapper.appendChild(fallbackInputs);
-        arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
-        departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
+        console.error('[Mobile Bottom Bar] Easepick library unavailable');
+        showErrorNotification('Date calendar failed to load. Please refresh the page and try again.');
         return;
       }
       initRangePicker();
