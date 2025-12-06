@@ -244,7 +244,278 @@ $active_bar = $active_bar_id && isset($bars[$active_bar_id]) ? $bars[$active_bar
                         <!-- Content Tab -->
                         <div id="tab-content" class="wp-mbb-tab-panel">
                             <h2><?php esc_html_e('Content & Menu', 'mobile-bottom-bar'); ?></h2>
-                            <p><?php esc_html_e('Configure menu items and custom content here.', 'mobile-bottom-bar'); ?></p>
+                            <p><?php esc_html_e('Add custom menu items with icons, links, and actions.', 'mobile-bottom-bar'); ?></p>
+
+                            <!-- Custom Items List -->
+                            <div class="wp-mbb-custom-items-section">
+                                <h3><?php esc_html_e('Custom Menu Items', 'mobile-bottom-bar'); ?></h3>
+                                <div id="wp-mbb-custom-items-list" class="wp-mbb-items-list">
+                                    <?php 
+                                    $custom_items = $active_bar['customItems'] ?? [];
+                                    if (!empty($custom_items)):
+                                        foreach ($custom_items as $item):
+                                            $item_id = esc_attr($item['id']);
+                                            $item_label = esc_attr($item['label'] ?? '');
+                                            $item_icon = esc_attr($item['icon'] ?? 'home');
+                                            $item_type = esc_attr($item['type'] ?? 'link');
+                                    ?>
+                                            <div class="wp-mbb-custom-item" data-item-id="<?php echo $item_id; ?>">
+                                                <div class="wp-mbb-item-header">
+                                                    <span class="wp-mbb-item-label"><?php echo $item_label ?: __('(Untitled)', 'mobile-bottom-bar'); ?></span>
+                                                    <span class="wp-mbb-item-type"><?php echo $item_type; ?></span>
+                                                    <button type="button" class="wp-mbb-item-delete" data-item-id="<?php echo $item_id; ?>">×</button>
+                                                </div>
+                                                <div class="wp-mbb-item-details" style="display: none;">
+                                                    <input type="hidden" class="wp-mbb-item-id" value="<?php echo $item_id; ?>">
+                                                    <table class="form-table">
+                                                        <tr>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Label', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <input type="text" class="wp-mbb-item-label-input regular-text" value="<?php echo $item_label; ?>" placeholder="<?php esc_attr_e('Item label', 'mobile-bottom-bar'); ?>">
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Icon', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <select class="wp-mbb-item-icon-select regular-text">
+                                                                    <option value="home" <?php selected($item_icon, 'home'); ?>>Home</option>
+                                                                    <option value="search" <?php selected($item_icon, 'search'); ?>>Search</option>
+                                                                    <option value="shopping-bag" <?php selected($item_icon, 'shopping-bag'); ?>>Shopping Bag</option>
+                                                                    <option value="user" <?php selected($item_icon, 'user'); ?>>User</option>
+                                                                    <option value="heart" <?php selected($item_icon, 'heart'); ?>>Heart</option>
+                                                                    <option value="bell" <?php selected($item_icon, 'bell'); ?>>Bell</option>
+                                                                    <option value="settings" <?php selected($item_icon, 'settings'); ?>>Settings</option>
+                                                                    <option value="bookmark" <?php selected($item_icon, 'bookmark'); ?>>Bookmark</option>
+                                                                    <option value="phone" <?php selected($item_icon, 'phone'); ?>>Phone</option>
+                                                                    <option value="gift" <?php selected($item_icon, 'gift'); ?>>Gift</option>
+                                                                    <option value="mail" <?php selected($item_icon, 'mail'); ?>>Mail</option>
+                                                                    <option value="map" <?php selected($item_icon, 'map'); ?>>Map</option>
+                                                                    <option value="calendar" <?php selected($item_icon, 'calendar'); ?>>Calendar</option>
+                                                                    <option value="hotel" <?php selected($item_icon, 'hotel'); ?>>Hotel</option>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Type', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <select class="wp-mbb-item-type-select regular-text">
+                                                                    <option value="link" <?php selected($item_type, 'link'); ?>>Link</option>
+                                                                    <option value="phone" <?php selected($item_type, 'phone'); ?>>Phone</option>
+                                                                    <option value="mail" <?php selected($item_type, 'mail'); ?>>Email</option>
+                                                                    <option value="modal" <?php selected($item_type, 'modal'); ?>>Modal</option>
+                                                                    <option value="wysiwyg" <?php selected($item_type, 'wysiwyg'); ?>>WYSIWYG</option>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+
+                                                        <!-- Link Type Fields -->
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-link" <?php echo $item_type !== 'link' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('URL', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <input type="url" class="wp-mbb-item-href regular-text" value="<?php echo esc_url($item['href'] ?? ''); ?>" placeholder="https://example.com">
+                                                            </td>
+                                                        </tr>
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-link" <?php echo $item_type !== 'link' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Link Target', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <select class="wp-mbb-item-link-target regular-text">
+                                                                    <option value="self" <?php selected($item['linkTarget'] ?? 'self', 'self'); ?>>Same Window</option>
+                                                                    <option value="blank" <?php selected($item['linkTarget'] ?? 'self', 'blank'); ?>>New Window</option>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+
+                                                        <!-- Phone Type Fields -->
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-phone" <?php echo $item_type !== 'phone' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Phone Number', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <input type="tel" class="wp-mbb-item-phone regular-text" value="<?php echo esc_attr($item['phoneNumber'] ?? ''); ?>" placeholder="+1-555-0000">
+                                                            </td>
+                                                        </tr>
+
+                                                        <!-- Email Type Fields -->
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-mail" <?php echo $item_type !== 'mail' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Email Address', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <input type="email" class="wp-mbb-item-email regular-text" value="<?php echo esc_attr($item['emailAddress'] ?? ''); ?>" placeholder="email@example.com">
+                                                            </td>
+                                                        </tr>
+
+                                                        <!-- Modal Type Fields -->
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-modal" <?php echo $item_type !== 'modal' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Modal Title', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <input type="text" class="wp-mbb-item-modal-title regular-text" value="<?php echo esc_attr($item['modalTitle'] ?? ''); ?>" placeholder="<?php esc_attr_e('Modal title', 'mobile-bottom-bar'); ?>">
+                                                            </td>
+                                                        </tr>
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-modal" <?php echo $item_type !== 'modal' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Modal Content', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <textarea class="wp-mbb-item-modal-content large-text" rows="5" placeholder="<?php esc_attr_e('Enter modal content', 'mobile-bottom-bar'); ?>"><?php echo esc_textarea($item['modalContent'] ?? ''); ?></textarea>
+                                                            </td>
+                                                        </tr>
+
+                                                        <!-- WYSIWYG Type Fields -->
+                                                        <tr class="wp-mbb-item-type-field wp-mbb-item-type-wysiwyg" <?php echo $item_type !== 'wysiwyg' ? 'style="display:none;"' : ''; ?>>
+                                                            <th scope="row">
+                                                                <label><?php esc_html_e('Content', 'mobile-bottom-bar'); ?></label>
+                                                            </th>
+                                                            <td>
+                                                                <textarea class="wp-mbb-item-wysiwyg-content large-text" rows="5" placeholder="<?php esc_attr_e('Enter content', 'mobile-bottom-bar'); ?>"><?php echo esc_textarea($item['wysiwygContent'] ?? ''); ?></textarea>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                    <?php 
+                                        endforeach;
+                                    endif;
+                                    ?>
+                                </div>
+
+                                <!-- Add New Item Button -->
+                                <button type="button" class="button button-secondary wp-mbb-btn-add-item" id="wp-mbb-add-item">
+                                    + <?php esc_html_e('Add Custom Item', 'mobile-bottom-bar'); ?>
+                                </button>
+
+                                <!-- Hidden template for new items -->
+                                <div id="wp-mbb-item-template" style="display: none;">
+                                    <div class="wp-mbb-custom-item" data-item-id="__template__">
+                                        <div class="wp-mbb-item-header">
+                                            <span class="wp-mbb-item-label"><?php esc_html_e('(Untitled)', 'mobile-bottom-bar'); ?></span>
+                                            <span class="wp-mbb-item-type">link</span>
+                                            <button type="button" class="wp-mbb-item-delete">×</button>
+                                        </div>
+                                        <div class="wp-mbb-item-details" style="display: none;">
+                                            <input type="hidden" class="wp-mbb-item-id" value="">
+                                            <table class="form-table">
+                                                <tr>
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Label', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text" class="wp-mbb-item-label-input regular-text" placeholder="<?php esc_attr_e('Item label', 'mobile-bottom-bar'); ?>">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Icon', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <select class="wp-mbb-item-icon-select regular-text">
+                                                            <option value="home">Home</option>
+                                                            <option value="search">Search</option>
+                                                            <option value="shopping-bag">Shopping Bag</option>
+                                                            <option value="user">User</option>
+                                                            <option value="heart">Heart</option>
+                                                            <option value="bell">Bell</option>
+                                                            <option value="settings">Settings</option>
+                                                            <option value="bookmark">Bookmark</option>
+                                                            <option value="phone">Phone</option>
+                                                            <option value="gift">Gift</option>
+                                                            <option value="mail">Mail</option>
+                                                            <option value="map">Map</option>
+                                                            <option value="calendar">Calendar</option>
+                                                            <option value="hotel">Hotel</option>
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Type', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <select class="wp-mbb-item-type-select regular-text">
+                                                            <option value="link">Link</option>
+                                                            <option value="phone">Phone</option>
+                                                            <option value="mail">Email</option>
+                                                            <option value="modal">Modal</option>
+                                                            <option value="wysiwyg">WYSIWYG</option>
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-link">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('URL', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <input type="url" class="wp-mbb-item-href regular-text" placeholder="https://example.com">
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-link">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Link Target', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <select class="wp-mbb-item-link-target regular-text">
+                                                            <option value="self">Same Window</option>
+                                                            <option value="blank">New Window</option>
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-phone" style="display:none;">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Phone Number', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <input type="tel" class="wp-mbb-item-phone regular-text" placeholder="+1-555-0000">
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-mail" style="display:none;">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Email Address', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <input type="email" class="wp-mbb-item-email regular-text" placeholder="email@example.com">
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-modal" style="display:none;">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Modal Title', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <input type="text" class="wp-mbb-item-modal-title regular-text" placeholder="<?php esc_attr_e('Modal title', 'mobile-bottom-bar'); ?>">
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-modal" style="display:none;">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Modal Content', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <textarea class="wp-mbb-item-modal-content large-text" rows="5" placeholder="<?php esc_attr_e('Enter modal content', 'mobile-bottom-bar'); ?>"></textarea>
+                                                    </td>
+                                                </tr>
+                                                <tr class="wp-mbb-item-type-field wp-mbb-item-type-wysiwyg" style="display:none;">
+                                                    <th scope="row">
+                                                        <label><?php esc_html_e('Content', 'mobile-bottom-bar'); ?></label>
+                                                    </th>
+                                                    <td>
+                                                        <textarea class="wp-mbb-item-wysiwyg-content large-text" rows="5" placeholder="<?php esc_attr_e('Enter content', 'mobile-bottom-bar'); ?>"></textarea>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

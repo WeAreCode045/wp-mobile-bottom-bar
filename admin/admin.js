@@ -75,6 +75,154 @@
       if (this.form) {
         this.form.addEventListener('change', this.updatePreview.bind(this));
       }
+
+      // Custom items handling
+      this.initCustomItems();
+    },
+
+    initCustomItems: function () {
+      // Add item button
+      const addItemBtn = document.getElementById('wp-mbb-add-item');
+      if (addItemBtn) {
+        addItemBtn.addEventListener('click', this.handleAddCustomItem.bind(this));
+      }
+
+      // Item header click to toggle details
+      const itemHeaders = document.querySelectorAll('.wp-mbb-item-header');
+      itemHeaders.forEach((header) => {
+        header.addEventListener('click', this.handleItemHeaderClick.bind(this));
+      });
+
+      // Item type changes to show/hide relevant fields
+      const typeSelects = document.querySelectorAll('.wp-mbb-item-type-select');
+      typeSelects.forEach((select) => {
+        select.addEventListener('change', this.handleItemTypeChange.bind(this));
+      });
+
+      // Item delete buttons
+      const itemDeleteBtns = document.querySelectorAll('.wp-mbb-item-delete');
+      itemDeleteBtns.forEach((btn) => {
+        btn.addEventListener('click', this.handleDeleteCustomItem.bind(this));
+      });
+
+      // Item label input changes
+      const labelInputs = document.querySelectorAll('.wp-mbb-item-label-input');
+      labelInputs.forEach((input) => {
+        input.addEventListener('change', this.handleItemLabelChange.bind(this));
+      });
+    },
+
+    handleAddCustomItem: function (e) {
+      e.preventDefault();
+
+      const template = document.getElementById('wp-mbb-item-template');
+      if (!template) return;
+
+      const itemsList = document.getElementById('wp-mbb-custom-items-list');
+      if (!itemsList) return;
+
+      // Clone the template
+      const newItem = template.firstElementChild.cloneNode(true);
+      
+      // Generate new ID
+      const newId = 'custom_' + Math.random().toString(36).substr(2, 9);
+      newItem.setAttribute('data-item-id', newId);
+
+      // Update the hidden input with new ID
+      const itemIdInput = newItem.querySelector('.wp-mbb-item-id');
+      if (itemIdInput) {
+        itemIdInput.value = newId;
+      }
+
+      // Add to list
+      itemsList.appendChild(newItem);
+
+      // Bind events to new item
+      const header = newItem.querySelector('.wp-mbb-item-header');
+      if (header) {
+        header.addEventListener('click', this.handleItemHeaderClick.bind(this));
+      }
+
+      const typeSelect = newItem.querySelector('.wp-mbb-item-type-select');
+      if (typeSelect) {
+        typeSelect.addEventListener('change', this.handleItemTypeChange.bind(this));
+      }
+
+      const deleteBtn = newItem.querySelector('.wp-mbb-item-delete');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', this.handleDeleteCustomItem.bind(this));
+      }
+
+      const labelInput = newItem.querySelector('.wp-mbb-item-label-input');
+      if (labelInput) {
+        labelInput.addEventListener('change', this.handleItemLabelChange.bind(this));
+      }
+
+      // Open the details
+      const details = newItem.querySelector('.wp-mbb-item-details');
+      if (details) {
+        details.style.display = 'block';
+      }
+    },
+
+    handleItemHeaderClick: function (e) {
+      const header = e.currentTarget;
+      const item = header.closest('.wp-mbb-custom-item');
+      const details = item.querySelector('.wp-mbb-item-details');
+
+      if (details.style.display === 'none' || !details.style.display) {
+        details.style.display = 'block';
+      } else {
+        details.style.display = 'none';
+      }
+    },
+
+    handleItemTypeChange: function (e) {
+      const select = e.currentTarget;
+      const item = select.closest('.wp-mbb-custom-item');
+      const newType = select.value;
+
+      // Update the type badge in header
+      const typeSpan = item.querySelector('.wp-mbb-item-type');
+      if (typeSpan) {
+        typeSpan.textContent = newType;
+      }
+
+      // Show/hide relevant fields based on type
+      const fields = item.querySelectorAll('.wp-mbb-item-type-field');
+      fields.forEach((field) => {
+        field.style.display = 'none';
+      });
+
+      // Show only relevant fields
+      const relevantFields = item.querySelectorAll('.wp-mbb-item-type-' + newType);
+      relevantFields.forEach((field) => {
+        field.style.display = 'table-row';
+      });
+    },
+
+    handleDeleteCustomItem: function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+      }
+
+      const item = e.currentTarget.closest('.wp-mbb-custom-item');
+      if (item) {
+        item.remove();
+      }
+    },
+
+    handleItemLabelChange: function (e) {
+      const input = e.currentTarget;
+      const item = input.closest('.wp-mbb-custom-item');
+      const labelSpan = item.querySelector('.wp-mbb-item-label');
+
+      if (labelSpan) {
+        labelSpan.textContent = input.value || '(Untitled)';
+      }
     },
 
     handleFormSubmit: function (e) {
@@ -92,6 +240,9 @@
       
       console.log('[Mobile Bottom Bar Admin] Bar ID:', barId);
       console.log('[Mobile Bottom Bar Admin] Form data keys:', Array.from(formData.keys()));
+
+      // Collect custom items
+      const customItems = this.collectCustomItems();
 
       // Build complete bar object with all required fields
       // Start with a base structure that includes all required fields
@@ -126,7 +277,7 @@
         textWeight: '400',
         textFont: 'system-ui',
         textColor: formData.get('text_color') || '#6b7280',
-        customItems: [],
+        customItems: customItems,
         assignedPages: [],
         useGlobalStyle: false,
         showDesktopSidebar: false,
@@ -151,6 +302,7 @@
 
       console.log('[Mobile Bottom Bar Admin] Saving to API URL:', apiUrl);
       console.log('[Mobile Bottom Bar Admin] Using nonce:', apiNonce ? 'yes' : 'no');
+      console.log('[Mobile Bottom Bar Admin] Custom items:', customItems);
 
       fetch(apiUrl, {
         method: 'POST',
@@ -188,6 +340,34 @@
           console.error('[Mobile Bottom Bar Admin] Error saving settings:', error);
           this.showStatus('Error saving settings: ' + error.message, 'error');
         });
+    },
+
+    collectCustomItems: function () {
+      const items = [];
+      const itemElements = document.querySelectorAll('.wp-mbb-custom-item');
+
+      itemElements.forEach((itemEl) => {
+        const itemId = itemEl.getAttribute('data-item-id');
+        if (!itemId || itemId === '__template__') return;
+
+        const item = {
+          id: itemId,
+          label: itemEl.querySelector('.wp-mbb-item-label-input')?.value || '',
+          icon: itemEl.querySelector('.wp-mbb-item-icon-select')?.value || 'home',
+          type: itemEl.querySelector('.wp-mbb-item-type-select')?.value || 'link',
+          href: itemEl.querySelector('.wp-mbb-item-href')?.value || '',
+          linkTarget: itemEl.querySelector('.wp-mbb-item-link-target')?.value || 'self',
+          phoneNumber: itemEl.querySelector('.wp-mbb-item-phone')?.value || '',
+          emailAddress: itemEl.querySelector('.wp-mbb-item-email')?.value || '',
+          modalTitle: itemEl.querySelector('.wp-mbb-item-modal-title')?.value || '',
+          modalContent: itemEl.querySelector('.wp-mbb-item-modal-content')?.value || '',
+          wysiwygContent: itemEl.querySelector('.wp-mbb-item-wysiwyg-content')?.value || '',
+        };
+
+        items.push(item);
+      });
+
+      return items;
     },
 
     handleLighthouseToggle: function (e) {

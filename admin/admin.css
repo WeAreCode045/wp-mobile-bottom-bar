@@ -398,6 +398,8 @@ label input[type="checkbox"] {
     flex-wrap: wrap;
   }
 
+
+
   .form-table th {
     width: 100%;
     display: block;
@@ -409,3 +411,131 @@ label input[type="checkbox"] {
     width: 100%;
   }
 }
+
+/* Custom Items Styling */
+.wp-mbb-custom-items-section {
+  margin-top: 30px;
+}
+
+.wp-mbb-custom-items-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.wp-mbb-items-list {
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.wp-mbb-custom-item {
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+}
+
+.wp-mbb-custom-item:last-child {
+  border-bottom: none;
+}
+
+.wp-mbb-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.wp-mbb-custom-item:hover .wp-mbb-item-header {
+  background: #f5f5f5;
+}
+
+.wp-mbb-item-label {
+  flex: 1;
+  font-weight: 500;
+  margin-right: 10px;
+}
+
+.wp-mbb-item-type {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e8eef7;
+  color: #2271b1;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 10px;
+}
+
+.wp-mbb-item-delete {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  color: #d32f2f;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.wp-mbb-item-delete:hover {
+  background: #d32f2f;
+  color: #fff;
+  border-color: #d32f2f;
+}
+
+.wp-mbb-item-details {
+  padding: 15px;
+  border-top: 1px solid #ddd;
+  background: #fff;
+}
+
+.wp-mbb-item-details.open {
+  display: block !important;
+}
+
+.wp-mbb-item-details .form-table {
+  margin: 0;
+}
+
+.wp-mbb-item-details .form-table tr {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.wp-mbb-item-details .form-table th {
+  width: 200px;
+  padding-right: 20px;
+  text-align: left;
+  font-weight: 500;
+  vertical-align: top;
+  padding-top: 10px;
+}
+
+.wp-mbb-item-details .form-table td {
+  flex: 1;
+  min-width: 300px;
+}
+
+.wp-mbb-item-details .form-table label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.wp-mbb-btn-add-item {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
