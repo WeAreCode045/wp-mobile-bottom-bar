@@ -11,9 +11,9 @@
 defined('ABSPATH') || exit;
 
 // Enqueue easepick assets for the date picker
-// Get the plugin root directory (two levels up from templates/)
-$plugin_root = dirname(dirname(__FILE__));
-$plugin_url = plugin_dir_url($plugin_root);
+// Get the plugin directory URL correctly by using the main plugin file
+$plugin_file = dirname(dirname(__FILE__)) . '/wp-mobile-bottom-bar.php';
+$plugin_url = plugin_dir_url($plugin_file);
 
 // Enqueue easepick CSS from local vendor directory
 wp_enqueue_style(
