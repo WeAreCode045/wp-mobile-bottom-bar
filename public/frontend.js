@@ -260,6 +260,16 @@
 
     // Inject styles for the multi-hotel modal if not already present
     (function injectStyles() {
+      // Ensure easepick CSS is loaded
+      const easepickCssId = 'wp-mbb-easepick-css';
+      if (!document.getElementById(easepickCssId)) {
+        const link = document.createElement('link');
+        link.id = easepickCssId;
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.css';
+        document.head.appendChild(link);
+      }
+
       const styleId = 'wp-mbb-hotel-selector-styles';
       if (document.getElementById(styleId)) return;
       
