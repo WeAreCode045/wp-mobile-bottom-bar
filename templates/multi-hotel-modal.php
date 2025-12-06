@@ -191,14 +191,14 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                     element: pickerElement,
                     inline: true,
                     css: [
-                        window.wpMbbPluginUrl + 'public/vendor/easepick/easepick.css'
+                        'https://new.differenthotels.be/wp-content/plugins/wp-mobile-bottom-bar/public/vendor/easepick/easepick.css'
                     ],
                     plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
                     RangePlugin: {
                         tooltip: true,
                         locale: {
-                            one: 'night',
-                            other: 'nights'
+                            one: 'nacht',
+                            other: 'nachten'
                         }
                     },
                     LockPlugin: {
@@ -281,7 +281,7 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                     day.style.backgroundColor = '#ef4444 !important';
                     day.style.color = '#ffffff !important';
                 } else if (day.classList.contains('in-range')) {
-                    day.style.backgroundColor = '#e5e7eb !important';
+                    day.style.backgroundColor = '#606163ff !important';
                     day.style.color = '#1f2937 !important';
                 }
             });
