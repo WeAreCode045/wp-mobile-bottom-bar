@@ -51,36 +51,22 @@
     return { overlay, container, closeButton, title, body };
   }
 
-  function createHotelSelectionModal() {
-    const overlay = document.createElement('div');
-    overlay.className = 'wp-mbb-overlay wp-mbb-overlay--hotels';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-hidden', 'true');
+  function getHotelModalElements() {
+    const modal = document.getElementById('wp-mbb-multi-hotel-modal');
+    if (!modal) {
+      console.error('[Mobile Bottom Bar] Multi-hotel modal template not found');
+      return null;
+    }
 
-    const container = document.createElement('div');
-    container.className = 'wp-mbb-modal wp-mbb-modal--hotels';
-    container.setAttribute('role', 'document');
-
-    const closeButton = document.createElement('button');
-    closeButton.type = 'button';
-    closeButton.className = 'wp-mbb-modal__close';
-    closeButton.setAttribute('aria-label', 'Close dialog');
-    closeButton.innerHTML = '&times;';
-
-    const title = document.createElement('h3');
-    title.className = 'wp-mbb-modal__title';
-    title.textContent = 'Select Hotel';
-
-    const body = document.createElement('div');
-    body.className = 'wp-mbb-modal__body wp-mbb-hotel-list';
-
-    container.appendChild(closeButton);
-    container.appendChild(title);
-    container.appendChild(body);
-    overlay.appendChild(container);
-
-    return { overlay, container, closeButton, title, body };
+    return {
+      overlay: modal,
+      closeButton: modal.querySelector('.wp-mbb-modal-close'),
+      body: modal.querySelector('.wp-mbb-modal-body'),
+      select: modal.querySelector('#wp-mbb-hotel-select'),
+      calendarHost: modal.querySelector('.wp-mbb-hotel-selector__calendar'),
+      datesWrapper: modal.querySelector('.wp-mbb-hotel-selector__dates'),
+      cta: modal.querySelector('.wp-mbb-hotel-selector__cta')
+    };
   }
 
   function triggerLighthouseCalendar(payload, selectedHotelId) {
@@ -183,28 +169,22 @@
   }
 
   function openHotelSelectionModal(hotelModalRefs, hotels, payload) {
-    const { overlay, body, closeButton } = hotelModalRefs;
+    if (!hotelModalRefs) {
+      console.error('[Mobile Bottom Bar] Hotel modal template not available');
+      return;
+    }
+
+    const { overlay, select, calendarHost, datesWrapper, cta } = hotelModalRefs;
 
     overlay.setAttribute('aria-hidden', 'false');
+    overlay.style.display = 'block';
     overlay.classList.add('is-visible');
     document.body.classList.add('wp-mbb-overlay-active');
 
-    // Clear previous content
-    body.innerHTML = '';
-
     const bookingUrl = payload.bookingUrl || '';
 
-    // Wrapper
-    const wrapper = document.createElement('div');
-    wrapper.className = 'wp-mbb-hotel-selector';
-
-    // Dropdown
-    const selectLabel = document.createElement('label');
-    selectLabel.textContent = 'Select Hotel';
-    selectLabel.className = 'wp-mbb-hotel-selector__label';
-
-    const select = document.createElement('select');
-    select.className = 'wp-mbb-hotel-selector__select';
+    // Clear and populate hotel dropdown
+    select.innerHTML = '';
     hotels.forEach(function (hotel, index) {
       const option = document.createElement('option');
       option.value = hotel.id;
@@ -215,15 +195,11 @@
       select.appendChild(option);
     });
 
-    // Date range (easepick calendar only - no fallback)
-    const datesWrapper = document.createElement('div');
-    datesWrapper.className = 'wp-mbb-hotel-selector__dates';
+    // Clear calendar host for fresh initialization
+    calendarHost.innerHTML = '';
 
     let arrivalValue = '';
     let departureValue = '';
-
-    const calendarHost = document.createElement('div');
-    calendarHost.className = 'wp-mbb-hotel-selector__calendar';
 
     function loadEasepickRange(cb) {
       // Check if easepick is already loaded (should be preloaded)
@@ -404,25 +380,19 @@
       });
     });
 
-    // CTA button
-    const cta = document.createElement('button');
-    cta.type = 'button';
-    cta.className = 'wp-mbb-hotel-selector__cta wp-mbb-hotel-list__button';
-    cta.textContent = 'Check availability';
-
+    // Attach CTA button handler (button already exists in template)
     cta.addEventListener('click', function (e) {
       e.preventDefault();
       const hotelId = select.value;
-      const hotelObj = hotels.find(h => h.id === hotelId) || { id: hotelId, name: hotelId };
-      const arrival = arrivalValue || arrivalInput.value || '';
-      const departure = departureValue || departureInput.value || '';
+      const arrival = arrivalValue || '';
+      const departure = departureValue || '';
 
       if (!hotelId) {
         console.warn('[Mobile Bottom Bar] No hotel selected');
         return;
       }
       if (!arrival || !departure) {
-        console.warn('[Mobile Bottom Bar] Arrival/Departure missing');
+        console.warn('[Mobile Bottom Bar] Dates not selected');
         return;
       }
 
@@ -440,27 +410,18 @@
       }
 
       // Fallback: trigger existing modal flow with selected hotel
-      // Populate hidden fields then trigger calendar
       triggerLighthouseCalendar(payload, hotelId);
-    });
-
-    wrapper.appendChild(selectLabel);
-    wrapper.appendChild(select);
-    wrapper.appendChild(datesWrapper);
-    wrapper.appendChild(cta);
-
-    body.appendChild(wrapper);
-
-    window.requestAnimationFrame(function () {
-      closeButton.focus();
     });
   }
 
   function closeHotelSelectionModal(hotelModalRefs) {
+    if (!hotelModalRefs) return;
+    
     const { overlay } = hotelModalRefs;
 
     overlay.classList.remove('is-visible');
     overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.display = 'none';
     document.body.classList.remove('wp-mbb-overlay-active');
   }
 
@@ -529,9 +490,8 @@
     // easepick assets will be loaded when multi-hotel modal is opened
 
     const overlayRefs = createOverlay();
-    const hotelModalRefs = createHotelSelectionModal();
+    const hotelModalRefs = getHotelModalElements();
     document.body.appendChild(overlayRefs.overlay);
-    document.body.appendChild(hotelModalRefs.overlay);
     let lastTrigger = null;
 
     const handleClose = function () {
@@ -550,19 +510,21 @@
       }
     });
 
-    hotelModalRefs.closeButton.addEventListener('click', handleHotelClose);
-    hotelModalRefs.overlay.addEventListener('click', function (event) {
-      if (event.target === hotelModalRefs.overlay) {
-        handleHotelClose();
-      }
-    });
+    if (hotelModalRefs) {
+      hotelModalRefs.closeButton.addEventListener('click', handleHotelClose);
+      hotelModalRefs.overlay.addEventListener('click', function (event) {
+        if (event.target === hotelModalRefs.overlay) {
+          handleHotelClose();
+        }
+      });
+    }
 
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
         if (overlayRefs.overlay.classList.contains('is-visible')) {
           handleClose();
         }
-        if (hotelModalRefs.overlay.classList.contains('is-visible')) {
+        if (hotelModalRefs && hotelModalRefs.overlay.classList.contains('is-visible')) {
           handleHotelClose();
         }
       }

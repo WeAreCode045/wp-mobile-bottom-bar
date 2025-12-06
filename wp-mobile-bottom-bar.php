@@ -914,6 +914,22 @@ final class Mobile_Bottom_Bar_Plugin {
 
         if ($should_render_lighthouse) {
             $this->render_lighthouse_form($bar);
+            $this->render_multi_hotel_modal_template();
+        }
+    }
+
+    private function render_multi_hotel_modal_template(): void {
+        static $rendered = false;
+        
+        if ($rendered) {
+            return;
+        }
+        
+        $template_path = plugin_dir_path(__FILE__) . 'templates/multi-hotel-modal.php';
+        
+        if (file_exists($template_path)) {
+            include $template_path;
+            $rendered = true;
         }
     }
 
