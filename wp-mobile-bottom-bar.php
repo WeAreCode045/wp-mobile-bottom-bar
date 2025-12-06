@@ -192,6 +192,11 @@ final class Mobile_Bottom_Bar_Plugin {
         // This allows partial updates (e.g., updating just the bars)
         $merged_data = array_merge($existing_settings, $incoming_data);
         
+        // Special handling for bars: merge bars instead of replacing them
+        if (!empty($incoming_data['bars']) && !empty($existing_settings['bars'])) {
+            $merged_data['bars'] = array_merge($existing_settings['bars'], $incoming_data['bars']);
+        }
+        
         error_log('[Mobile Bottom Bar] Merged data: ' . json_encode($merged_data));
         
         // Sanitize the merged data
