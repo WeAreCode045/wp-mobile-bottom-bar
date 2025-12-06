@@ -198,14 +198,14 @@
 
     // Try to initialize easepick range calendar if available
     (function initRangePicker() {
-      if (typeof window.EasePick === 'undefined' && typeof window.easepick === 'undefined') {
+      const easepickGlobal = (typeof window.easepick !== 'undefined') ? window.easepick : null;
+      if (!easepickGlobal || typeof easepickGlobal.create !== 'function') {
         datesWrapper.appendChild(fallbackInputs);
         arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
         departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
         return;
       }
 
-      const EasePicker = window.EasePick || window.easepick;
       const rangeEl = document.createElement('input');
       rangeEl.type = 'text';
       rangeEl.className = 'wp-mbb-hotel-selector__range-input';
@@ -214,7 +214,7 @@
       datesWrapper.appendChild(calendarHost);
 
       try {
-        const picker = new EasePicker.create({
+        const picker = easepickGlobal.create({
           element: rangeEl,
           inline: true,
           calendars: 2,
@@ -234,7 +234,6 @@
             });
           },
         });
-        // If easepick fails, fallback
         if (!picker) {
           datesWrapper.appendChild(fallbackInputs);
           arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
