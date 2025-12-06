@@ -311,12 +311,12 @@
 		};
 		options = {
 			doc: document,
-			css: [],
+			css: ["/wp-content/plugins/wp-mobile-bottom-bar/public/vendor/easepick/easepick.css"],
 			element: null,
 			firstDay: 1,
 			grid: 1,
 			calendars: 1,
-			lang: "en-US",
+			lang: "nl-NL",
 			date: null,
 			format: "YYYY-MM-DD",
 			readonly: !0,
