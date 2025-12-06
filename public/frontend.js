@@ -216,7 +216,8 @@
       datesWrapper.appendChild(calendarHost);
 
       try {
-        const picker = easepickGlobal.create({
+        // easepick.create is actually a class constructor, needs 'new'
+        const picker = new easepickGlobal.create({
           element: rangeEl,
           inline: true,
           calendars: 2,
