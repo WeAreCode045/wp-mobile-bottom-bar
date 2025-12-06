@@ -532,7 +532,7 @@ final class Mobile_Bottom_Bar_Plugin {
                 'enabled' => false,
                 'hotelId' => '',
                 'hotelName' => '',
-                'allowMultipleHotels' => false,
+                'enableMultiHotel' => false,
                 'selectedHotels' => [],
             ],
         ]);
@@ -688,7 +688,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'enabled' => false,
             'hotelId' => '',
             'hotelName' => '',
-            'allowMultipleHotels' => false,
+            'enableMultiHotel' => false,
             'selectedHotels' => [],
         ];
 
@@ -697,14 +697,21 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $enabled = !empty($value['enabled']);
-        $allow_multiple = !empty($value['allowMultipleHotels']);
+        // Support both 'enableMultiHotel' (frontend) and 'allowMultipleHotels' (legacy)
+        $enable_multi_hotel = !empty($value['enableMultiHotel']) || !empty($value['allowMultipleHotels']);
         
         // Handle multiple hotels mode
-        if ($allow_multiple) {
+        if ($enable_multi_hotel) {
             $selected_hotels = [];
             if (is_array($value['selectedHotels'] ?? null)) {
                 foreach ($value['selectedHotels'] as $hotel) {
-                    if (is_array($hotel)) {
+                    // Handle both string IDs and object formats
+                    if (is_string($hotel)) {
+                        $hotel_id = sanitize_text_field($hotel);
+                        if ($hotel_id !== '') {
+                            $selected_hotels[] = $hotel_id;
+                        }
+                    } elseif (is_array($hotel)) {
                         $hotel_id = sanitize_text_field($hotel['id'] ?? '');
                         $hotel_name = sanitize_text_field($hotel['name'] ?? '');
                         if ($hotel_id !== '') {
@@ -721,7 +728,7 @@ final class Mobile_Bottom_Bar_Plugin {
                 'enabled' => $enabled,
                 'hotelId' => '', // No single hotel in multiple mode
                 'hotelName' => '',
-                'allowMultipleHotels' => true,
+                'enableMultiHotel' => true,
                 'selectedHotels' => $selected_hotels,
             ];
         }
@@ -734,7 +741,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'enabled' => $enabled,
             'hotelId' => $hotel_id,
             'hotelName' => $hotel_name,
-            'allowMultipleHotels' => false,
+            'enableMultiHotel' => false,
             'selectedHotels' => [],
         ];
     }
@@ -1390,7 +1397,7 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         // Check if multiple hotels mode with hotels selected
-        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+        if ((!empty($config['enableMultiHotel']) || !empty($config['allowMultipleHotels'])) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
             $meta = $this->get_mylighthouse_bootstrap();
             return !empty($meta['bookingPageUrl']);
         }
@@ -1420,7 +1427,7 @@ final class Mobile_Bottom_Bar_Plugin {
         $form_id = $this->get_lighthouse_form_id($bar);
 
         // Handle multiple hotels mode
-        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+        if ((!empty($config['enableMultiHotel']) || !empty($config['allowMultipleHotels'])) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
             $label = __('Book', 'mobile-bottom-bar');
             
             return [
@@ -1486,7 +1493,7 @@ final class Mobile_Bottom_Bar_Plugin {
         $form_id = $this->get_lighthouse_form_id($bar);
 
         // Handle multiple hotels mode - don't render form, JS will handle hotel selection
-        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+        if ((!empty($config['enableMultiHotel']) || !empty($config['allowMultipleHotels'])) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
             // For multi-hotel mode, we render separate forms for each hotel
             foreach ($config['selectedHotels'] as $hotel) {
                 $hotel_id = $hotel['id'] ?? '';
