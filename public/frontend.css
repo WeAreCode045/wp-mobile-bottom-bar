@@ -83,7 +83,7 @@
   width: 3.25rem;
   height: 3.25rem;
   border-radius: 999px;
-  background: var(--wp-mbb-accent, #6366f1);
+  background: var(--wp-mbb-accent, #fb304b);
   color: #fff;
   display: flex;
   align-items: center;
@@ -130,7 +130,7 @@
 }
 
 #wp-mobile-bottom-bar .wp-mbb__item:hover .wp-mbb__label {
-  color: var(--wp-mbb-accent, #6366f1);
+  color: var(--wp-mbb-accent, #fb304b);
 }
 
 #wp-mobile-bottom-bar .wp-mbb__icon {
@@ -205,7 +205,7 @@
   position: relative;
   width: var(--wp-mbb-calendar-icon-size, calc(var(--wp-mbb-icon-size, 20px) + 16px));
   height: var(--wp-mbb-calendar-icon-size, calc(var(--wp-mbb-icon-size, 20px) + 16px));
-  background: var(--wp-mbb-calendar-icon-color, var(--wp-mbb-accent, #6366f1));
+  background: var(--wp-mbb-calendar-icon-color, var(--wp-mbb-accent, #fb304b));
   color: #fff;
   border-radius: 999px;
   border: 3px solid #ffffff;
@@ -228,9 +228,9 @@
 }
 
 #wp-mobile-bottom-bar .wp-mbb__item.is-active .wp-mbb__icon {
-  background: var(--wp-mbb-accent, #6366f1);
+  background: var(--wp-mbb-accent, #fb304b);
   color: #fff;
-  border-color: var(--wp-mbb-accent, #6366f1);
+  border-color: var(--wp-mbb-accent, #fb304b);
 }
 
 #wp-mobile-bottom-bar .wp-mbb__svg {
@@ -252,7 +252,7 @@
 }
 
 #wp-mobile-bottom-bar .wp-mbb__item.is-active .wp-mbb__dot {
-  background: var(--wp-mbb-accent, #6366f1);
+  background: var(--wp-mbb-accent, #fb304b);
 }
 
 #wp-mobile-bottom-bar .wp-mbb__label {
@@ -262,7 +262,7 @@
 }
 
 #wp-mobile-bottom-bar .wp-mbb__item.is-active .wp-mbb__label {
-  color: var(--wp-mbb-accent, #6366f1);
+  color: var(--wp-mbb-accent, #fb304b);
 }
 
 @media (min-width: 1024px) {
@@ -519,7 +519,7 @@
 
 .wp-mbb-hotel-list__button:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 0 0 2px #6366f1;
+  box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.1), 0 0 0 2px #fb304b;
 }
 
 /* Multi-Hotel Modal Template Styles */
@@ -627,8 +627,8 @@
 
 .wp-mbb-hotel-selector__select:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #fb304b;
+  box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.1);
 }
 
 .wp-mbb-hotel-selector__dates {
@@ -652,8 +652,8 @@
 
 .wp-mbb-hotel-selector__range-input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #fb304b;
+  box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.1);
 }
 
 /* Easepick calendar styling for hotel modal */
@@ -698,7 +698,7 @@
 .wp-mbb-hotel-selector__cta {
   width: 100%;
   padding: 0.95rem 1rem;
-  background: #6366f1;
+  background: #fb304b;
   border: none;
   border-radius: 0.5rem;
   color: #ffffff;
@@ -710,19 +710,19 @@
 }
 
 .wp-mbb-hotel-selector__cta:hover {
-  background: #4f46e5;
+  background: #e91e43;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(251, 48, 75, 0.3);
 }
 
 .wp-mbb-hotel-selector__cta:active {
-  background: #4338ca;
+  background: #d11837;
   transform: translateY(0);
 }
 
 .wp-mbb-hotel-selector__cta:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.2);
 }
 
 .wp-mbb-hotel-selector__error {
