@@ -78,6 +78,59 @@ final class Mobile_Bottom_Bar_Plugin {
             return;
         }
 
+        // Register EasePick datetime dependency first (in head for availability)
+		wp_register_script(
+			'easepick-datetime',
+			'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
+			array(),
+			'1.2.1',
+			false  // Load in head
+		);
+
+		// Register EasePick base plugin (depends on datetime)
+		wp_register_script(
+			'easepick-base-plugin',
+			'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
+			array('easepick-datetime'),
+			'1.2.1',
+			false  // Load in head
+		);
+
+		// Register EasePick core library from local vendor directory (depends on datetime)
+		wp_register_script(
+			'easepick-core',
+			plugins_url('/assets/vendor/easepick/easepick.js', MYLIGHTHOUSE_BOOKER_PLUGIN_FILE),
+			array('easepick-datetime', 'easepick-base-plugin'),
+			'1.2.1',
+			false  // Load in head to ensure availability before modal opens
+		);
+
+		// Register EasePick range plugin from local vendor (depends on core)
+		wp_register_script(
+			'easepick-range',
+			plugins_url('/assets/vendor/easepick/easepick-range.js', MYLIGHTHOUSE_BOOKER_PLUGIN_FILE),
+			array('easepick-core', 'easepick-base-plugin'),
+			'1.2.1',
+			false  // Load in head
+		);
+
+		wp_register_script(
+			'easepick-lock',
+			'https://cdn.jsdelivr.net/npm/@easepick/lock-plugin@1.2.1/dist/index.umd.min.js',
+			array('easepick-core', 'easepick-base-plugin'),
+			'1.2.1',
+			true
+		);
+
+		wp_register_script(
+			'easepick-wrapper',
+			plugins_url('/assets/vendor/easepick/easepick-wrapper.js', MYLIGHTHOUSE_BOOKER_PLUGIN_FILE),
+			array('easepick-core', 'easepick-range', 'easepick-lock'),
+			'1.0.0',
+			true
+		);
+
+
         $entry = $this->get_manifest_entry();
         $asset_base = plugin_dir_url(__FILE__) . 'build/';
 
