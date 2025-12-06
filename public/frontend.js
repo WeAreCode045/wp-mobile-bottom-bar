@@ -261,19 +261,6 @@
 
     // Inject styles for the multi-hotel modal if not already present
     (function injectStyles() {
-      // Ensure easepick CSS is loaded from local vendor directory
-      const easepickCssId = 'wp-mbb-easepick-css';
-      if (!document.getElementById(easepickCssId)) {
-        const link = document.createElement('link');
-        link.id = easepickCssId;
-        link.rel = 'stylesheet';
-        const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
-          ? wpMbbConfig.pluginUrl 
-          : '/wp-content/plugins/wp-mobile-bottom-bar/';
-        link.href = pluginUrl + 'public/vendor/easepick/easepick.css';
-        document.head.appendChild(link);
-      }
-
       const styleId = 'wp-mbb-hotel-selector-styles';
       if (document.getElementById(styleId)) return;
       
@@ -481,10 +468,18 @@
     // Preload easepick if multi-hotel button exists
     const hasMultiHotel = bar.querySelector('a.wp-mbb__item[data-type="mylighthouse-multi"]');
     if (hasMultiHotel) {
-      console.log('[Mobile Bottom Bar] Multi-hotel button detected, preloading easepick scripts');
+      console.log('[Mobile Bottom Bar] Multi-hotel button detected, preloading easepick assets');
       const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
         ? wpMbbConfig.pluginUrl 
         : '/wp-content/plugins/wp-mobile-bottom-bar/';
+      
+      // Preload CSS first
+      const cssLink = document.createElement('link');
+      cssLink.id = 'wp-mbb-easepick-css';
+      cssLink.rel = 'stylesheet';
+      cssLink.href = pluginUrl + 'public/vendor/easepick/easepick.css';
+      document.head.appendChild(cssLink);
+      console.log('[Mobile Bottom Bar] Easepick CSS loaded from:', cssLink.href);
       
       // Preload scripts
       const scripts = [
