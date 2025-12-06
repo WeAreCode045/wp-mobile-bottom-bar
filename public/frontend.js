@@ -195,18 +195,10 @@
       datesWrapper.appendChild(calendarHost);
 
       try {
-        console.log('[Mobile Bottom Bar] Initializing easepick with inline calendar');
-        // easepick.create is actually a class constructor, needs 'new'
+        console.log('[Mobile Bottom Bar] Initializing easepick with defaults from easepick.js');
+        // easepick.create is a class constructor; rely on defaults defined in the bundled easepick.js
         const picker = new easepickGlobal.create({
           element: rangeEl,
-          inline: true,
-          calendars: 2,
-          grid: 2,
-          autoApply: true,
-          plugins: ['RangePlugin'],
-          RangePlugin: {
-            tooltip: true,
-          },
           setup(p) {
             console.log('[Mobile Bottom Bar] Easepick setup called, picker:', p);
             p.on('select', (e) => {
