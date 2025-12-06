@@ -21,10 +21,10 @@ wp_enqueue_style(
     '1.2.1'
 );
 
-// Enqueue easepick dependencies from CDN
+// Enqueue easepick dependencies from local vendor directory
 wp_enqueue_script(
     'easepick-datetime',
-    'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
+    $plugin_url . 'public/vendor/easepick/datetime.js',
     [],
     '1.2.1',
     true
@@ -32,7 +32,7 @@ wp_enqueue_script(
 
 wp_enqueue_script(
     'easepick-base-plugin',
-    'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
+    $plugin_url . 'public/vendor/easepick/base-plugin.js',
     ['easepick-datetime'],
     '1.2.1',
     true
@@ -171,9 +171,6 @@ wp_enqueue_script(
                 const pickerConfig = {
                     element: pickerElement,
                     inline: true,
-                    css: [
-                        'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.css'
-                    ],
                     plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
                     RangePlugin: {
                         tooltip: true,
