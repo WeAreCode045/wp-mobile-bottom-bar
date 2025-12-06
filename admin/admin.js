@@ -76,8 +76,23 @@
         this.form.addEventListener('change', this.updatePreview.bind(this));
       }
 
+      // Page assignment mode radio buttons
+      const pageAssignmentRadios = document.querySelectorAll('input[name="page_assignment_mode"]');
+      pageAssignmentRadios.forEach((radio) => {
+        radio.addEventListener('change', this.handlePageAssignmentModeChange.bind(this));
+      });
+
       // Custom items handling
       this.initCustomItems();
+    },
+
+    handlePageAssignmentModeChange: function (e) {
+      const mode = e.target.value;
+      const pageSelector = document.getElementById('wp-mbb-page-selector');
+      
+      if (pageSelector) {
+        pageSelector.style.display = mode === 'specific' ? 'block' : 'none';
+      }
     },
 
     initCustomItems: function () {
@@ -244,6 +259,9 @@
       // Collect custom items
       const customItems = this.collectCustomItems();
 
+      // Collect assigned pages
+      const assignedPages = this.collectAssignedPages();
+
       // Build complete bar object with all required fields
       // Start with a base structure that includes all required fields
       const barData = {
@@ -278,7 +296,7 @@
         textFont: 'system-ui',
         textColor: formData.get('text_color') || '#6b7280',
         customItems: customItems,
-        assignedPages: [],
+        assignedPages: assignedPages,
         useGlobalStyle: false,
         showDesktopSidebar: false,
         lighthouseIntegration: {
@@ -368,6 +386,30 @@
       });
 
       return items;
+    },
+
+    collectAssignedPages: function () {
+      const assignedPages = [];
+      const mode = document.querySelector('input[name="page_assignment_mode"]:checked')?.value;
+
+      // If mode is "all", don't assign specific pages (empty array means all pages)
+      if (mode !== 'specific') {
+        return assignedPages;
+      }
+
+      // Collect checked page checkboxes
+      const pageCheckboxes = document.querySelectorAll('input[name="assigned_pages[]"]:checked');
+      pageCheckboxes.forEach((checkbox) => {
+        const pageId = parseInt(checkbox.value, 10);
+        if (pageId > 0) {
+          assignedPages.push({
+            pageId: pageId,
+            includeChildren: false,
+          });
+        }
+      });
+
+      return assignedPages;
     },
 
     handleLighthouseToggle: function (e) {

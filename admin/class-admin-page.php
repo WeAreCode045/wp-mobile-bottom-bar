@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 $settings = isset($this) ? $this->get_settings() : [];
 $bars = $settings['bars'] ?? [];
 $menus = isset($this) ? $this->get_menus() : [];
+$pages = isset($this) ? $this->get_page_options() : [];
 $mylighthouse = isset($this) ? $this->get_mylighthouse_bootstrap() : [];
 
 // Get active bar from URL parameter
@@ -120,6 +121,41 @@ $active_bar = $active_bar_id && isset($bars[$active_bar_id]) ? $bars[$active_bar
                                                 <?php checked($active_bar['showLabels'] ?? false); ?>>
                                             <?php esc_html_e('Show Labels', 'mobile-bottom-bar'); ?>
                                         </label>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row"><?php esc_html_e('Display On', 'mobile-bottom-bar'); ?></th>
+                                    <td>
+                                        <fieldset id="wp-mbb-page-assignment">
+                                            <label style="display: block; margin-bottom: 10px;">
+                                                <input type="radio" name="page_assignment_mode" value="all" 
+                                                    <?php checked($this->get_page_assignment_mode($active_bar) === 'all'); ?>>
+                                                <?php esc_html_e('All pages', 'mobile-bottom-bar'); ?>
+                                            </label>
+                                            <label style="display: block; margin-bottom: 10px;">
+                                                <input type="radio" name="page_assignment_mode" value="specific"
+                                                    <?php checked($this->get_page_assignment_mode($active_bar) === 'specific'); ?>>
+                                                <?php esc_html_e('Specific pages', 'mobile-bottom-bar'); ?>
+                                            </label>
+
+                                            <div id="wp-mbb-page-selector" style="display: <?php echo $this->get_page_assignment_mode($active_bar) === 'specific' ? 'block' : 'none'; ?>; margin-top: 10px; padding-left: 20px;">
+                                                <p class="description" style="margin-bottom: 10px;">
+                                                    <?php esc_html_e('Select the pages where this bar should appear:', 'mobile-bottom-bar'); ?>
+                                                </p>
+                                                <div id="wp-mbb-page-tree" style="border: 1px solid #ddd; border-radius: 4px; max-height: 300px; overflow-y: auto; background: #f9f9f9;">
+                                                    <?php 
+                                                    $assigned_pages = $this->get_assigned_page_ids($active_bar);
+                                                    if (!empty($pages)):
+                                                        $this->render_page_tree($pages, $assigned_pages);
+                                                    else:
+                                                        echo '<p style="padding: 10px; color: #666;">' . esc_html__('No pages available', 'mobile-bottom-bar') . '</p>';
+                                                    endif;
+                                                    ?>
+                                                </div>
+                                            </div>
+                                        </fieldset>
+                                        <p class="description"><?php esc_html_e('Choose where the bar should be visible on your website.', 'mobile-bottom-bar'); ?></p>
                                     </td>
                                 </tr>
                             </table>

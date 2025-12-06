@@ -220,6 +220,81 @@ final class Mobile_Bottom_Bar_Plugin {
         return true;
     }
 
+    public function get_page_assignment_mode(array $bar): string {
+        $assigned_pages = $bar['assignedPages'] ?? [];
+        
+        if (empty($assigned_pages)) {
+            return 'all';
+        }
+        
+        return 'specific';
+    }
+
+    public function get_assigned_page_ids(array $bar): array {
+        $assigned_pages = $bar['assignedPages'] ?? [];
+        $page_ids = [];
+        
+        foreach ($assigned_pages as $assignment) {
+            if (is_array($assignment) && isset($assignment['pageId'])) {
+                $page_ids[] = $assignment['pageId'];
+            }
+        }
+        
+        return $page_ids;
+    }
+
+    public function render_page_tree(array $pages, array $assigned_pages, int $depth = 0): void {
+        if (empty($pages)) {
+            return;
+        }
+
+        // Group pages by parent
+        $parent_groups = [];
+        foreach ($pages as $page) {
+            $parent_id = $page['parentId'] ?? null;
+            if (!isset($parent_groups[$parent_id])) {
+                $parent_groups[$parent_id] = [];
+            }
+            $parent_groups[$parent_id][] = $page;
+        }
+
+        // Render root pages
+        if (isset($parent_groups[null])) {
+            foreach ($parent_groups[null] as $page) {
+                $page_id = $page['id'];
+                $is_checked = in_array($page_id, $assigned_pages, true);
+                $has_children = $page['hasChildren'] ?? false;
+                $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $depth);
+                
+                echo '<div style="padding: 5px 10px; border-bottom: 1px solid #e0e0e0;">';
+                echo '<label style="display: flex; align-items: center; cursor: pointer;">';
+                echo '<input type="checkbox" name="assigned_pages[]" value="' . esc_attr($page_id) . '" ' . checked($is_checked) . '>';
+                echo '<span style="margin-left: 8px;">' . esc_html($page['title']) . '</span>';
+                if ($has_children) {
+                    echo '<span style="margin-left: 8px; font-size: 11px; color: #999;">(' . count($parent_groups[$page_id] ?? []) . ')</span>';
+                }
+                echo '</label>';
+                
+                // Render child pages
+                if ($has_children && isset($parent_groups[$page_id])) {
+                    foreach ($parent_groups[$page_id] as $child_page) {
+                        $child_id = $child_page['id'];
+                        $child_checked = in_array($child_id, $assigned_pages, true);
+                        
+                        echo '<div style="padding: 5px 10px; padding-left: 30px; background: #fafafa;">';
+                        echo '<label style="display: flex; align-items: center; cursor: pointer;">';
+                        echo '<input type="checkbox" name="assigned_pages[]" value="' . esc_attr($child_id) . '" ' . checked($child_checked) . '>';
+                        echo '<span style="margin-left: 8px; font-size: 13px;">' . esc_html($child_page['title']) . '</span>';
+                        echo '</label>';
+                        echo '</div>';
+                    }
+                }
+                
+                echo '</div>';
+            }
+        }
+    }
+
     private function get_manifest_entry(): ?array {
         $base = plugin_dir_path(__FILE__) . 'build/';
         $candidates = [

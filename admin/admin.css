@@ -539,3 +539,67 @@ label input[type="checkbox"] {
   border-radius: 4px;
 }
 
+/* Page Assignment Styles */
+#wp-mbb-page-assignment {
+  margin: 10px 0;
+  border: none;
+  padding: 0;
+}
+
+#wp-mbb-page-assignment label {
+  font-weight: normal;
+  cursor: pointer;
+}
+
+#wp-mbb-page-selector {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#wp-mbb-page-tree {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+#wp-mbb-page-tree > div {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+#wp-mbb-page-tree > div:last-child {
+  border-bottom: none;
+}
+
+#wp-mbb-page-tree label {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  margin: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+#wp-mbb-page-tree label:hover {
+  background: #f5f5f5;
+}
+
+#wp-mbb-page-tree input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+#wp-mbb-page-tree span {
+  margin-left: 8px;
+}
+
+#wp-mbb-page-selector .description {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #666;
+}
+
