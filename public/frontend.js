@@ -302,19 +302,26 @@
       const type = target.dataset.type;
       const linkBehavior = target.dataset.linkTarget;
 
+      console.log('[Mobile Bottom Bar] Click type:', type);
+
       if (type === 'mylighthouse-multi') {
         event.preventDefault();
+        console.log('[Mobile Bottom Bar] Multi-hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
         
         // Show hotel selection modal first
         if (payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
+          console.log('[Mobile Bottom Bar] Opening hotel selection modal with', payload.hotels.length, 'hotels');
           openHotelSelectionModal(hotelModalRefs, payload.hotels, payload);
+        } else {
+          console.log('[Mobile Bottom Bar] Invalid payload for multi-hotel', payload);
         }
         return;
       }
 
       if (type === 'mylighthouse') {
         event.preventDefault();
+        console.log('[Mobile Bottom Bar] Single hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
         triggerLighthouseCalendar(payload);
         return;
