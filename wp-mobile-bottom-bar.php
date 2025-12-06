@@ -1481,7 +1481,7 @@ final class Mobile_Bottom_Bar_Plugin {
 
         $form_id = $this->get_lighthouse_form_id($bar);
 
-        // Handle multiple hotels mode - render a single form with hotel selector
+        // Handle multiple hotels mode - render a single form (hotel selector will be injected by JS)
         if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
             $first_hotel = $config['selectedHotels'][0];
             $first_hotel_id = $first_hotel['id'] ?? '';
@@ -1490,28 +1490,9 @@ final class Mobile_Bottom_Bar_Plugin {
             echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-multi-hotel="true">';
             echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
             echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type wp-mbb-multi-hotel-form" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($first_hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($first_hotel_name) . '" data-room-name="">';
-            
-            // Hotel selector dropdown for multiple hotels
-            echo '<div class="wp-mbb-hotel-selector-wrapper">';
-            echo '<label for="' . esc_attr($form_id) . '-hotel-select" class="wp-mbb-hotel-selector-label">' . esc_html__('Select Hotel:', 'mobile-bottom-bar') . '</label>';
-            echo '<select id="' . esc_attr($form_id) . '-hotel-select" name="hotel_id" class="wp-mbb-hotel-selector" data-form-id="' . esc_attr($form_id) . '">';
-            
-            foreach ($config['selectedHotels'] as $hotel) {
-                $hotel_id = $hotel['id'] ?? '';
-                $hotel_name = $hotel['name'] ?? '';
-                
-                if ($hotel_id === '') {
-                    continue;
-                }
-                
-                echo '<option value="' . esc_attr($hotel_id) . '" data-hotel-name="' . esc_attr($hotel_name) . '">' . esc_html($hotel_name) . '</option>';
-            }
-            
-            echo '</select>';
-            echo '</div>';
-            
+            echo '<input type="hidden" name="hotel_id" value="' . esc_attr($first_hotel_id) . '" />';
             echo '<input type="hidden" name="room_id" value="" />';
-            echo '<input type="hidden" name="hotel_name" value="' . esc_attr($first_hotel_name) . '" class="wp-mbb-hotel-name-field" />';
+            echo '<input type="hidden" name="hotel_name" value="' . esc_attr($first_hotel_name) . '" />';
             echo '<input type="hidden" name="room_name" value="" />';
             echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
             echo '<input type="hidden" class="mlb-checkout" name="Departure" />';

@@ -62,6 +62,11 @@
       return false;
     }
 
+    // If this is a multi-hotel form, inject the hotel selector into the modal
+    if (payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
+      injectHotelSelectorIntoModal(form, payload);
+    }
+
     try {
       document.dispatchEvent(new CustomEvent('mlb-maybe-init-modal', { detail: { form: form } }));
     } catch (error) {
@@ -78,32 +83,79 @@
     return true;
   }
 
-  function setupHotelSelectorListener() {
-    // Listen for hotel selector changes in multi-hotel forms
-    document.addEventListener('change', function(event) {
-      if (event.target.classList.contains('wp-mbb-hotel-selector')) {
-        var select = event.target;
-        var selectedOption = select.options[select.selectedIndex];
-        var hotelId = selectedOption.value;
-        var hotelName = selectedOption.getAttribute('data-hotel-name') || selectedOption.textContent;
-        var formId = select.getAttribute('data-form-id');
+  function injectHotelSelectorIntoModal(form, payload) {
+    // Wait for modal to be created and inserted into DOM
+    var checkInterval = setInterval(function() {
+      var modal = document.querySelector('.mlb-modal-room');
+      
+      if (modal) {
+        clearInterval(checkInterval);
         
-        if (formId) {
-          var form = document.getElementById(formId);
-          if (form) {
-            // Update form data-hotel-id attribute
+        // Check if hotel selector already exists
+        if (modal.querySelector('.wp-mbb-hotel-selector-wrapper')) {
+          return;
+        }
+        
+        // Find the modal body or form container
+        var modalBody = modal.querySelector('.mlb-modal-body') || modal.querySelector('.mlb-form');
+        
+        if (modalBody) {
+          // Create hotel selector
+          var selectorWrapper = document.createElement('div');
+          selectorWrapper.className = 'wp-mbb-hotel-selector-wrapper';
+          
+          var label = document.createElement('label');
+          label.className = 'wp-mbb-hotel-selector-label';
+          label.textContent = 'Select Hotel:';
+          label.setAttribute('for', payload.formId + '-hotel-select');
+          
+          var select = document.createElement('select');
+          select.className = 'wp-mbb-hotel-selector';
+          select.id = payload.formId + '-hotel-select';
+          
+          payload.hotels.forEach(function(hotel) {
+            var option = document.createElement('option');
+            option.value = hotel.id;
+            option.textContent = hotel.name;
+            option.setAttribute('data-hotel-name', hotel.name);
+            select.appendChild(option);
+          });
+          
+          // Add change event listener
+          select.addEventListener('change', function() {
+            var selectedOption = select.options[select.selectedIndex];
+            var hotelId = selectedOption.value;
+            var hotelName = selectedOption.getAttribute('data-hotel-name') || selectedOption.textContent;
+            
+            // Update form attributes
             form.setAttribute('data-hotel-id', hotelId);
             form.setAttribute('data-hotel-name', hotelName);
             
-            // Update hidden hotel_name field
-            var hotelNameField = form.querySelector('.wp-mbb-hotel-name-field');
+            // Update hidden fields in the form
+            var hotelIdField = form.querySelector('input[name="hotel_id"]');
+            if (hotelIdField) {
+              hotelIdField.value = hotelId;
+            }
+            
+            var hotelNameField = form.querySelector('input[name="hotel_name"]');
             if (hotelNameField) {
               hotelNameField.value = hotelName;
             }
-          }
+          });
+          
+          selectorWrapper.appendChild(label);
+          selectorWrapper.appendChild(select);
+          
+          // Insert at the beginning of modal body
+          modalBody.insertBefore(selectorWrapper, modalBody.firstChild);
         }
       }
-    });
+    }, 50);
+    
+    // Clear interval after 5 seconds if modal not found
+    setTimeout(function() {
+      clearInterval(checkInterval);
+    }, 5000);
   }
 
   function openOverlay(overlayRefs, type, payload, fallbackTitle) {
