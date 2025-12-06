@@ -524,6 +524,8 @@ final class Mobile_Bottom_Bar_Plugin {
                 'enabled' => false,
                 'hotelId' => '',
                 'hotelName' => '',
+                'allowMultipleHotels' => false,
+                'selectedHotels' => [],
             ],
         ]);
     }
@@ -678,6 +680,8 @@ final class Mobile_Bottom_Bar_Plugin {
             'enabled' => false,
             'hotelId' => '',
             'hotelName' => '',
+            'allowMultipleHotels' => false,
+            'selectedHotels' => [],
         ];
 
         if (!is_array($value)) {
@@ -685,17 +689,49 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $enabled = !empty($value['enabled']);
-        $hotel_id = sanitize_text_field($value['hotelId'] ?? '');
-        $hotel_name = sanitize_text_field($value['hotelName'] ?? '');
-
-        if (!$enabled || $hotel_id === '') {
+        $allow_multiple = !empty($value['allowMultipleHotels']);
+        
+        if (!$enabled) {
             return $defaults;
         }
+
+        // Handle multiple hotels mode
+        if ($allow_multiple) {
+            $selected_hotels = [];
+            if (is_array($value['selectedHotels'] ?? null)) {
+                foreach ($value['selectedHotels'] as $hotel) {
+                    if (is_array($hotel)) {
+                        $hotel_id = sanitize_text_field($hotel['id'] ?? '');
+                        $hotel_name = sanitize_text_field($hotel['name'] ?? '');
+                        if ($hotel_id !== '') {
+                            $selected_hotels[] = [
+                                'id' => $hotel_id,
+                                'name' => $hotel_name ?: $hotel_id,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            return [
+                'enabled' => true,
+                'hotelId' => '', // No single hotel in multiple mode
+                'hotelName' => '',
+                'allowMultipleHotels' => true,
+                'selectedHotels' => $selected_hotels,
+            ];
+        }
+
+        // Handle single hotel mode
+        $hotel_id = sanitize_text_field($value['hotelId'] ?? '');
+        $hotel_name = sanitize_text_field($value['hotelName'] ?? '');
 
         return [
             'enabled' => true,
             'hotelId' => $hotel_id,
             'hotelName' => $hotel_name,
+            'allowMultipleHotels' => false,
+            'selectedHotels' => [],
         ];
     }
 
@@ -1339,13 +1375,23 @@ final class Mobile_Bottom_Bar_Plugin {
             return false;
         }
 
-        if (empty($config['enabled']) || empty($config['hotelId'])) {
+        if (empty($config['enabled'])) {
             return false;
         }
 
-        $meta = $this->get_mylighthouse_bootstrap();
+        // Check if single hotel mode with hotel selected
+        if (!empty($config['hotelId'])) {
+            $meta = $this->get_mylighthouse_bootstrap();
+            return !empty($meta['bookingPageUrl']);
+        }
 
-        return !empty($meta['bookingPageUrl']);
+        // Check if multiple hotels mode with hotels selected
+        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+            $meta = $this->get_mylighthouse_bootstrap();
+            return !empty($meta['bookingPageUrl']);
+        }
+
+        return false;
     }
 
     private function get_lighthouse_form_id(array $bar): string {
@@ -1367,15 +1413,38 @@ final class Mobile_Bottom_Bar_Plugin {
 
     private function build_lighthouse_item(array $bar): ?array {
         $config = $bar['lighthouseIntegration'] ?? [];
+        $form_id = $this->get_lighthouse_form_id($bar);
+
+        // Handle multiple hotels mode
+        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+            $label = __('Book', 'mobile-bottom-bar');
+            
+            return [
+                'label' => $label,
+                'href' => '#',
+                'icon' => 'calendar',
+                'target' => '_self',
+                'rel' => '',
+                'is_active' => false,
+                'type' => 'mylighthouse-multi',
+                'payload' => [
+                    'formId' => $form_id,
+                    'hotels' => $config['selectedHotels'],
+                    'isMultiple' => true,
+                ],
+                'linkTargetBehavior' => 'self',
+            ];
+        }
+
+        // Handle single hotel mode
         $hotel_id = $config['hotelId'] ?? '';
 
         if ($hotel_id === '') {
             return null;
         }
 
-        $label = $config['hotelName'] ?? '';
-        $label = is_string($label) && $label !== '' ? $label : __('Book', 'mobile-bottom-bar');
-        $form_id = $this->get_lighthouse_form_id($bar);
+        $hotel_name = $config['hotelName'] ?? '';
+        $label = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Book', 'mobile-bottom-bar');
 
         return [
             'label' => $label,
@@ -1401,9 +1470,8 @@ final class Mobile_Bottom_Bar_Plugin {
         $meta = $this->get_mylighthouse_bootstrap();
         $booking_url = $meta['bookingPageUrl'] ?? '';
         $config = $bar['lighthouseIntegration'] ?? [];
-        $hotel_id = $config['hotelId'] ?? '';
 
-        if ($booking_url === '' || $hotel_id === '') {
+        if ($booking_url === '') {
             return;
         }
 
@@ -1412,6 +1480,46 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $form_id = $this->get_lighthouse_form_id($bar);
+
+        // Handle multiple hotels mode
+        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+            foreach ($config['selectedHotels'] as $hotel) {
+                $hotel_id = $hotel['id'] ?? '';
+                $hotel_name = $hotel['name'] ?? '';
+                
+                if ($hotel_id === '') {
+                    continue;
+                }
+
+                $single_form_id = $form_id . '-' . sanitize_key($hotel_id);
+                $hotel_name_safe = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Selected hotel', 'mobile-bottom-bar');
+
+                echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-hotel-id="' . esc_attr($hotel_id) . '">';
+                echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
+                echo '<form id="' . esc_attr($single_form_id) . '" class="mlb-form mlb-room-form-type" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($hotel_name_safe) . '" data-room-name="">';
+                echo '<input type="hidden" name="hotel_id" value="' . esc_attr($hotel_id) . '" />';
+                echo '<input type="hidden" name="room_id" value="" />';
+                echo '<input type="hidden" name="hotel_name" value="' . esc_attr($hotel_name_safe) . '" />';
+                echo '<input type="hidden" name="room_name" value="" />';
+                echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
+                echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
+                echo '<div class="form-actions">';
+                echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
+                echo '</div>';
+                echo '</form>';
+                echo '</div>';
+                echo '</div>';
+            }
+            return;
+        }
+
+        // Handle single hotel mode
+        $hotel_id = $config['hotelId'] ?? '';
+
+        if ($hotel_id === '') {
+            return;
+        }
+
         $hotel_name = $config['hotelName'] ?? '';
         $hotel_name = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Selected hotel', 'mobile-bottom-bar');
 

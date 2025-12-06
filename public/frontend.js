@@ -51,12 +51,50 @@
     return { overlay, container, closeButton, title, body };
   }
 
-  function triggerLighthouseCalendar(payload) {
+  function createHotelSelectionModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'wp-mbb-overlay wp-mbb-overlay--hotels';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-hidden', 'true');
+
+    const container = document.createElement('div');
+    container.className = 'wp-mbb-modal wp-mbb-modal--hotels';
+    container.setAttribute('role', 'document');
+
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'wp-mbb-modal__close';
+    closeButton.setAttribute('aria-label', 'Close dialog');
+    closeButton.innerHTML = '&times;';
+
+    const title = document.createElement('h3');
+    title.className = 'wp-mbb-modal__title';
+    title.textContent = 'Select Hotel';
+
+    const body = document.createElement('div');
+    body.className = 'wp-mbb-modal__body wp-mbb-hotel-list';
+
+    container.appendChild(closeButton);
+    container.appendChild(title);
+    container.appendChild(body);
+    overlay.appendChild(container);
+
+    return { overlay, container, closeButton, title, body };
+  }
+
+  function triggerLighthouseCalendar(payload, selectedHotelId) {
     if (!payload || !payload.formId) {
       return false;
     }
 
-    var form = document.getElementById(payload.formId);
+    // For multiple hotels, construct the form ID with the selected hotel ID
+    let formId = payload.formId;
+    if (selectedHotelId && payload.isMultiple) {
+      formId = payload.formId + '-' + selectedHotelId;
+    }
+
+    var form = document.getElementById(formId);
 
     if (!form) {
       return false;
@@ -76,6 +114,57 @@
 
     trigger.click();
     return true;
+  }
+
+  function openHotelSelectionModal(hotelModalRefs, hotels, onSelectCallback) {
+    const { overlay, body, closeButton } = hotelModalRefs;
+
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.classList.add('is-visible');
+    document.body.classList.add('wp-mbb-overlay-active');
+
+    // Clear previous content
+    body.innerHTML = '';
+
+    // Create hotel list
+    const hotelList = document.createElement('ul');
+    hotelList.className = 'wp-mbb-hotel-list__items';
+
+    hotels.forEach(function (hotel) {
+      const li = document.createElement('li');
+      li.className = 'wp-mbb-hotel-list__item';
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'wp-mbb-hotel-list__button';
+      button.textContent = hotel.name || hotel.id;
+      button.setAttribute('data-hotel-id', hotel.id);
+
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (typeof onSelectCallback === 'function') {
+          onSelectCallback(hotel.id);
+        }
+        closeHotelSelectionModal(hotelModalRefs);
+      });
+
+      li.appendChild(button);
+      hotelList.appendChild(li);
+    });
+
+    body.appendChild(hotelList);
+
+    window.requestAnimationFrame(function () {
+      closeButton.focus();
+    });
+  }
+
+  function closeHotelSelectionModal(hotelModalRefs) {
+    const { overlay } = hotelModalRefs;
+
+    overlay.classList.remove('is-visible');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('wp-mbb-overlay-active');
   }
 
   function openOverlay(overlayRefs, type, payload, fallbackTitle) {
@@ -139,12 +228,18 @@
     }
 
     const overlayRefs = createOverlay();
+    const hotelModalRefs = createHotelSelectionModal();
     document.body.appendChild(overlayRefs.overlay);
+    document.body.appendChild(hotelModalRefs.overlay);
     let lastTrigger = null;
 
     const handleClose = function () {
       closeOverlay(overlayRefs, lastTrigger);
       lastTrigger = null;
+    };
+
+    const handleHotelClose = function () {
+      closeHotelSelectionModal(hotelModalRefs);
     };
 
     overlayRefs.closeButton.addEventListener('click', handleClose);
@@ -154,9 +249,21 @@
       }
     });
 
+    hotelModalRefs.closeButton.addEventListener('click', handleHotelClose);
+    hotelModalRefs.overlay.addEventListener('click', function (event) {
+      if (event.target === hotelModalRefs.overlay) {
+        handleHotelClose();
+      }
+    });
+
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && overlayRefs.overlay.classList.contains('is-visible')) {
-        handleClose();
+      if (event.key === 'Escape') {
+        if (overlayRefs.overlay.classList.contains('is-visible')) {
+          handleClose();
+        }
+        if (hotelModalRefs.overlay.classList.contains('is-visible')) {
+          handleHotelClose();
+        }
       }
     });
 
@@ -169,6 +276,20 @@
 
       const type = target.dataset.type;
       const linkBehavior = target.dataset.linkTarget;
+
+      if (type === 'mylighthouse-multi') {
+        event.preventDefault();
+        const payload = parsePayload(target.dataset.payload);
+        
+        if (payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
+          // Show hotel selection modal
+          openHotelSelectionModal(hotelModalRefs, payload.hotels, function (selectedHotelId) {
+            // After hotel selection, trigger the lighthouse calendar with the selected hotel
+            triggerLighthouseCalendar(payload, selectedHotelId);
+          });
+        }
+        return;
+      }
 
       if (type === 'mylighthouse') {
         event.preventDefault();

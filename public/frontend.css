@@ -459,3 +459,65 @@
     display: none !important;
   }
 }
+
+/* Hotel Selection Modal Styles */
+.wp-mbb-overlay--hotels {
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 10001;
+}
+
+.wp-mbb-modal--hotels {
+  max-width: 380px;
+}
+
+.wp-mbb-hotel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wp-mbb-hotel-list__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wp-mbb-hotel-list__item {
+  margin: 0;
+  padding: 0;
+}
+
+.wp-mbb-hotel-list__button {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.wp-mbb-hotel-list__button:hover {
+  background: #e2e8f0;
+  border-color: #cbd5f0;
+  color: #0f172a;
+  transform: translateX(2px);
+}
+
+.wp-mbb-hotel-list__button:active {
+  background: #cbd5f0;
+  border-color: #94a3b8;
+  transform: translateX(2px);
+}
+
+.wp-mbb-hotel-list__button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 0 0 2px #6366f1;
+}
