@@ -216,6 +216,7 @@
       datesWrapper.appendChild(calendarHost);
 
       try {
+        console.log('[Mobile Bottom Bar] Initializing easepick with inline calendar');
         // easepick.create is actually a class constructor, needs 'new'
         const picker = new easepickGlobal.create({
           element: rangeEl,
@@ -228,7 +229,9 @@
             tooltip: true,
           },
           setup(p) {
+            console.log('[Mobile Bottom Bar] Easepick setup called, picker:', p);
             p.on('select', (e) => {
+              console.log('[Mobile Bottom Bar] Date selected:', e.detail);
               const start = e.detail.start;
               const end = e.detail.end;
               arrivalValue = start ? start.format('YYYY-MM-DD') : '';
@@ -237,6 +240,14 @@
             });
           },
         });
+        console.log('[Mobile Bottom Bar] Easepick picker created:', picker);
+        
+        if (picker && picker.ui && picker.ui.wrapper) {
+          console.log('[Mobile Bottom Bar] Making calendar wrapper visible');
+          picker.ui.wrapper.style.display = 'block';
+          picker.ui.wrapper.style.visibility = 'visible';
+        }
+        
         if (!picker) {
           console.error('[Mobile Bottom Bar] Failed to create picker instance');
           showErrorNotification('Calendar initialization failed. Please refresh the page and try again.');
@@ -302,12 +313,23 @@
         .wp-mbb-hotel-selector__cta {
           margin-top: 10px;
         }
-        .easepick {
-          width: 100%;
-          max-width: none;
+        .wp-mbb-hotel-selector__calendar {
+          display: block !important;
         }
+        .easepick,
         .easepick-wrapper {
+          display: block !important;
+          visibility: visible !important;
           width: 100% !important;
+          max-width: none !important;
+        }
+        .easepick-body {
+          display: block !important;
+          visibility: visible !important;
+        }
+        .easepick-container {
+          display: flex !important;
+          visibility: visible !important;
         }
       `;
       document.head.appendChild(style);
