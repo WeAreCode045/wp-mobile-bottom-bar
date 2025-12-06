@@ -1358,7 +1358,14 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $script_handles = [
+            // easepick core + plugins (registered by MyLighthouse Booker)
+            'easepick-datetime',
+            'easepick-base-plugin',
+            'easepick-core',
+            'easepick-range',
+            'easepick-lock',
             'easepick-wrapper',
+            // booking modal + forms
             'mylighthouse-booker-booking-modal',
             'mylighthouse-booker-form',
             'mylighthouse-booker-room-form',
