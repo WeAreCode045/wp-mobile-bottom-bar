@@ -691,10 +691,6 @@ final class Mobile_Bottom_Bar_Plugin {
         $enabled = !empty($value['enabled']);
         $allow_multiple = !empty($value['allowMultipleHotels']);
         
-        if (!$enabled) {
-            return $defaults;
-        }
-
         // Handle multiple hotels mode
         if ($allow_multiple) {
             $selected_hotels = [];
@@ -714,7 +710,7 @@ final class Mobile_Bottom_Bar_Plugin {
             }
 
             return [
-                'enabled' => true,
+                'enabled' => $enabled,
                 'hotelId' => '', // No single hotel in multiple mode
                 'hotelName' => '',
                 'allowMultipleHotels' => true,
@@ -727,7 +723,7 @@ final class Mobile_Bottom_Bar_Plugin {
         $hotel_name = sanitize_text_field($value['hotelName'] ?? '');
 
         return [
-            'enabled' => true,
+            'enabled' => $enabled,
             'hotelId' => $hotel_id,
             'hotelName' => $hotel_name,
             'allowMultipleHotels' => false,
