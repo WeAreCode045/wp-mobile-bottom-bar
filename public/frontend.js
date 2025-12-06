@@ -280,6 +280,37 @@
       }
     });
 
+    // Use capture phase to intercept clicks before default behavior
+    document.addEventListener('click', function (event) {
+      const target = event.target.closest('a.wp-mbb__item');
+
+      if (!target) {
+        return;
+      }
+
+      const type = target.dataset.type;
+      console.log('[Mobile Bottom Bar] Intercepted click on wp-mbb__item, type:', type);
+
+      if (type === 'mylighthouse-multi') {
+        console.log('[Mobile Bottom Bar] Multi-hotel mode detected, preventing default');
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+        const payload = parsePayload(target.dataset.payload);
+        console.log('[Mobile Bottom Bar] Parsed payload:', payload);
+        
+        // Show hotel selection modal first
+        if (payload && payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
+          console.log('[Mobile Bottom Bar] Opening hotel selection modal with', payload.hotels.length, 'hotels');
+          openHotelSelectionModal(hotelModalRefs, payload.hotels, payload);
+        } else {
+          console.log('[Mobile Bottom Bar] Invalid payload for multi-hotel', payload);
+        }
+        return;
+      }
+    }, true); // Use capture phase
+
     bar.addEventListener('click', function (event) {
       console.log('[Mobile Bottom Bar] Click event fired on bar');
       const target = event.target.closest('a.wp-mbb__item');
@@ -292,25 +323,23 @@
       const type = target.dataset.type;
       const linkBehavior = target.dataset.linkTarget;
 
-      console.log('[Mobile Bottom Bar] Click type:', type, 'linkBehavior:', linkBehavior);
-      console.log('[Mobile Bottom Bar] Target href:', target.getAttribute('href'));
-      console.log('[Mobile Bottom Bar] Target dataset:', target.dataset);
+      console.log('[Mobile Bottom Bar] Click type (bubbling):', type, 'linkBehavior:', linkBehavior);
 
       if (type === 'mylighthouse-multi') {
-        console.log('[Mobile Bottom Bar] Preventing default for mylighthouse-multi');
+        console.log('[Mobile Bottom Bar] Preventing default for mylighthouse-multi (bubbling)');
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        console.log('[Mobile Bottom Bar] Multi-hotel mode detected');
+        console.log('[Mobile Bottom Bar] Multi-hotel mode detected (bubbling)');
         const payload = parsePayload(target.dataset.payload);
-        console.log('[Mobile Bottom Bar] Parsed payload:', payload);
+        console.log('[Mobile Bottom Bar] Parsed payload (bubbling):', payload);
         
         // Show hotel selection modal first
         if (payload && payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
-          console.log('[Mobile Bottom Bar] Opening hotel selection modal with', payload.hotels.length, 'hotels');
+          console.log('[Mobile Bottom Bar] Opening hotel selection modal with', payload.hotels.length, 'hotels (bubbling)');
           openHotelSelectionModal(hotelModalRefs, payload.hotels, payload);
         } else {
-          console.log('[Mobile Bottom Bar] Invalid payload for multi-hotel', payload);
+          console.log('[Mobile Bottom Bar] Invalid payload for multi-hotel (bubbling)', payload);
         }
         return;
       }
