@@ -1481,8 +1481,21 @@ final class Mobile_Bottom_Bar_Plugin {
 
         $form_id = $this->get_lighthouse_form_id($bar);
 
-        // Handle multiple hotels mode
+        // Handle multiple hotels mode - render a single form with hotel selector
         if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
+            $first_hotel = $config['selectedHotels'][0];
+            $first_hotel_id = $first_hotel['id'] ?? '';
+            $first_hotel_name = $first_hotel['name'] ?? '';
+
+            echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-multi-hotel="true">';
+            echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
+            echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type wp-mbb-multi-hotel-form" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($first_hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($first_hotel_name) . '" data-room-name="">';
+            
+            // Hotel selector dropdown for multiple hotels
+            echo '<div class="wp-mbb-hotel-selector-wrapper">';
+            echo '<label for="' . esc_attr($form_id) . '-hotel-select" class="wp-mbb-hotel-selector-label">' . esc_html__('Select Hotel:', 'mobile-bottom-bar') . '</label>';
+            echo '<select id="' . esc_attr($form_id) . '-hotel-select" name="hotel_id" class="wp-mbb-hotel-selector" data-form-id="' . esc_attr($form_id) . '">';
+            
             foreach ($config['selectedHotels'] as $hotel) {
                 $hotel_id = $hotel['id'] ?? '';
                 $hotel_name = $hotel['name'] ?? '';
@@ -1490,26 +1503,24 @@ final class Mobile_Bottom_Bar_Plugin {
                 if ($hotel_id === '') {
                     continue;
                 }
-
-                $single_form_id = $form_id . '-' . sanitize_key($hotel_id);
-                $hotel_name_safe = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Selected hotel', 'mobile-bottom-bar');
-
-                echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-hotel-id="' . esc_attr($hotel_id) . '">';
-                echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
-                echo '<form id="' . esc_attr($single_form_id) . '" class="mlb-form mlb-room-form-type" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($hotel_name_safe) . '" data-room-name="">';
-                echo '<input type="hidden" name="hotel_id" value="' . esc_attr($hotel_id) . '" />';
-                echo '<input type="hidden" name="room_id" value="" />';
-                echo '<input type="hidden" name="hotel_name" value="' . esc_attr($hotel_name_safe) . '" />';
-                echo '<input type="hidden" name="room_name" value="" />';
-                echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
-                echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
-                echo '<div class="form-actions">';
-                echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
-                echo '</div>';
-                echo '</form>';
-                echo '</div>';
-                echo '</div>';
+                
+                echo '<option value="' . esc_attr($hotel_id) . '" data-hotel-name="' . esc_attr($hotel_name) . '">' . esc_html($hotel_name) . '</option>';
             }
+            
+            echo '</select>';
+            echo '</div>';
+            
+            echo '<input type="hidden" name="room_id" value="" />';
+            echo '<input type="hidden" name="hotel_name" value="' . esc_attr($first_hotel_name) . '" class="wp-mbb-hotel-name-field" />';
+            echo '<input type="hidden" name="room_name" value="" />';
+            echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
+            echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
+            echo '<div class="form-actions">';
+            echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
+            echo '</div>';
+            echo '</form>';
+            echo '</div>';
+            echo '</div>';
             return;
         }
 

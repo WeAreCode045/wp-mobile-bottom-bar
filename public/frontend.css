@@ -460,64 +460,52 @@
   }
 }
 
-/* Hotel Selection Modal Styles */
-.wp-mbb-overlay--hotels {
-  background: rgba(15, 23, 42, 0.55);
-  z-index: 10001;
-}
-
-.wp-mbb-modal--hotels {
-  max-width: 380px;
-}
-
-.wp-mbb-hotel-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.wp-mbb-hotel-list__items {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Multi-Hotel Selector Styles */
+.wp-mbb-hotel-selector-wrapper {
+  margin-bottom: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.wp-mbb-hotel-list__item {
-  margin: 0;
-  padding: 0;
+.wp-mbb-hotel-selector-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: block;
 }
 
-.wp-mbb-hotel-list__button {
+.wp-mbb-hotel-selector {
   width: 100%;
-  padding: 0.95rem 1rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
   color: #1e293b;
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231e293b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
 }
 
-.wp-mbb-hotel-list__button:hover {
-  background: #e2e8f0;
-  border-color: #cbd5f0;
-  color: #0f172a;
-  transform: translateX(2px);
-}
-
-.wp-mbb-hotel-list__button:active {
-  background: #cbd5f0;
+.wp-mbb-hotel-selector:hover {
   border-color: #94a3b8;
-  transform: translateX(2px);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
 }
 
-.wp-mbb-hotel-list__button:focus {
+.wp-mbb-hotel-selector:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 0 0 2px #6366f1;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.wp-mbb-hotel-selector option {
+  padding: 0.5rem;
+  background: #ffffff;
+  color: #1e293b;
 }
