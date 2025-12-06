@@ -108,66 +108,160 @@ wp_enqueue_script(
 
 <script>
 (function() {
-	'use strict';
+    'use strict';
 
-	const rangeInput = document.getElementById('wp-mbb-date-display');
-	const calendarContainer = document.querySelector('#wp-mbb-multi-hotel-modal .wp-mbb-hotel-selector__calendar');
-	const arrivalInput = document.getElementById('wp-mbb-arrival');
-	const departureInput = document.getElementById('wp-mbb-departure');
+    // Helper: format date as YYYY-MM-DD
+    function formatDateYYYYMMDD(date) {
+        if (!date) return '';
+        if (typeof date.format === 'function') {
+            return date.format('YYYY-MM-DD');
+        }
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
 
-	function resetFields(picker) {
-		if (picker && typeof picker.clear === 'function') {
-			picker.clear();
-		}
-		if (rangeInput) rangeInput.value = '';
-		if (arrivalInput) arrivalInput.value = '';
-		if (departureInput) departureInput.value = '';
-	}
+    const modal = document.getElementById('wp-mbb-multi-hotel-modal');
+    const triggerInput = document.getElementById('wp-mbb-date-display');
+    const calendarContainer = modal.querySelector('.wp-mbb-hotel-selector__calendar');
+    const arrivalHidden = document.getElementById('wp-mbb-arrival');
+    const departureHidden = document.getElementById('wp-mbb-departure');
+    let pickerInstance = null;
 
-	function initPicker() {
-		if (!rangeInput || !calendarContainer || !window.easepick || typeof window.easepick.create !== 'function') {
-			return null;
-		}
+    // Create hidden trigger input for easepick (prevents stray text nodes in calendar)
+    function createTriggerInput() {
+        if (!calendarContainer) return null;
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.className = 'wp-mbb-picker-trigger-input';
+        calendarContainer.appendChild(hidden);
+        return hidden;
+    }
 
-		// Use vendor defaults; just bind to our input and container
-		const picker = new window.easepick.create({
-			element: rangeInput,
-			container: calendarContainer,
-			setup(p) {
-				p.on('select', (e) => {
-					const start = e.detail.start;
-					const end = e.detail.end;
-					const arrival = start ? start.format('YYYY-MM-DD') : '';
-					const departure = end ? end.format('YYYY-MM-DD') : '';
-					if (arrivalInput) arrivalInput.value = arrival;
-					if (departureInput) departureInput.value = departure;
-					if (rangeInput) {
-						rangeInput.value = arrival && departure ? `${arrival} → ${departure}` : '';
-					}
-				});
-			},
-		});
+    // Initialize easepick picker with RangePlugin and LockPlugin (same as MLB)
+    function initPicker() {
+        let attempts = 0;
 
-		return picker;
-	}
+        function tryInitPicker() {
+            attempts++;
+            const easepickRef = window.easepick;
 
-	// Initialize picker once DOM is ready
-	let pickerInstance = null;
-	function ensurePicker() {
-		if (!pickerInstance) {
-			pickerInstance = initPicker();
-		}
-	}
+            if (!easepickRef || !easepickRef.Core) {
+                if (attempts > 50) {
+                    console.error('[WP-MBB] EasePick failed to load after 50 attempts');
+                    return;
+                }
+                setTimeout(tryInitPicker, 100);
+                return;
+            }
 
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', ensurePicker);
-	} else {
-		ensurePicker();
-	}
+            const CoreClass = easepickRef.Core || easepickRef.create;
+            if (!CoreClass) {
+                console.error('[WP-MBB] CoreClass not found');
+                return;
+            }
 
-	// Listen for reset requests from frontend.js
-	document.addEventListener('wp-mbb-reset-easepick', function () {
-		resetFields(pickerInstance);
-	});
+            try {
+                // Create hidden trigger input
+                const triggerEl = createTriggerInput();
+                const pickerElement = triggerEl || triggerInput || calendarContainer;
+
+                // Configuration matching mylighthouse-booker
+                const pickerConfig = {
+                    element: pickerElement,
+                    inline: true,
+                    css: [
+                        'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.css'
+                    ],
+                    plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
+                    RangePlugin: {
+                        tooltip: true,
+                        locale: {
+                            one: 'night',
+                            other: 'nights'
+                        }
+                    },
+                    LockPlugin: {
+                        minDate: new Date()
+                    },
+                    setup(picker) {
+                        console.log('[WP-MBB] Picker setup called');
+
+                        // Remove header for cleaner modal display
+                        setTimeout(function() {
+                            const headerEl = calendarContainer.querySelector('.header');
+                            if (headerEl) headerEl.remove();
+                        }, 0);
+
+                        picker.on('select', (e) => {
+                            const { start, end } = e.detail;
+                            if (!start || !end) return;
+
+                            const arrival = formatDateYYYYMMDD(start);
+                            const departure = formatDateYYYYMMDD(end);
+
+                            // Update hidden inputs
+                            if (arrivalHidden) arrivalHidden.value = arrival;
+                            if (departureHidden) departureHidden.value = departure;
+
+                            // Update display input
+                            if (triggerInput) {
+                                triggerInput.value = `${arrival} → ${departure}`;
+                            }
+
+                            console.log('[WP-MBB] Dates selected:', arrival, departure);
+                        });
+                    }
+                };
+
+                pickerInstance = new CoreClass(pickerConfig);
+                console.log('[WP-MBB] Picker initialized successfully');
+
+            } catch (err) {
+                console.error('[WP-MBB] Failed to init picker:', err);
+            }
+        }
+
+        tryInitPicker();
+    }
+
+    // Reset picker and fields
+    function resetPicker() {
+        if (pickerInstance) {
+            try {
+                if (typeof pickerInstance.clear === 'function') {
+                    pickerInstance.clear();
+                } else if (typeof pickerInstance.clearSelection === 'function') {
+                    pickerInstance.clearSelection();
+                } else if (typeof pickerInstance.destroy === 'function') {
+                    pickerInstance.destroy();
+                    pickerInstance = null;
+                    initPicker(); // Reinitialize after destroy
+                }
+            } catch (e) {
+                console.warn('[WP-MBB] Error clearing picker:', e);
+            }
+        }
+
+        // Clear all date fields
+        if (triggerInput) triggerInput.value = '';
+        if (arrivalHidden) arrivalHidden.value = '';
+        if (departureHidden) departureHidden.value = '';
+    }
+
+    // Wait for easepick to load, then init picker
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPicker);
+    } else {
+        initPicker();
+    }
+
+    // Listen for reset from frontend.js
+    document.addEventListener('wp-mbb-reset-easepick', resetPicker);
+
+    // Expose for debugging/external use
+    window.wpMbbPicker = pickerInstance;
+    window.wpMbbResetPicker = resetPicker;
 })();
 </script>
