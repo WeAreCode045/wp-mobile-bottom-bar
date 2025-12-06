@@ -89,9 +89,10 @@ wp_enqueue_script(
 						<?php esc_html_e('Select Dates', 'mobile-bottom-bar'); ?>
 					</label>
 					<div class="wp-mbb-hotel-selector__dates">
-						<div class="wp-mbb-hotel-selector__calendar">
-							<!-- Calendar initialized by JavaScript -->
-						</div>
+						<input type="text" id="wp-mbb-date-display" class="wp-mbb-hotel-selector__range-input" placeholder="<?php esc_attr_e('Select dates', 'mobile-bottom-bar'); ?>" readonly />
+						<div class="wp-mbb-hotel-selector__calendar"></div>
+						<input type="hidden" id="wp-mbb-arrival" />
+						<input type="hidden" id="wp-mbb-departure" />
 					</div>
 				</div>
 
@@ -104,3 +105,69 @@ wp_enqueue_script(
 		</div>
 	</div>
 </div>
+
+<script>
+(function() {
+	'use strict';
+
+	const rangeInput = document.getElementById('wp-mbb-date-display');
+	const calendarContainer = document.querySelector('#wp-mbb-multi-hotel-modal .wp-mbb-hotel-selector__calendar');
+	const arrivalInput = document.getElementById('wp-mbb-arrival');
+	const departureInput = document.getElementById('wp-mbb-departure');
+
+	function resetFields(picker) {
+		if (picker && typeof picker.clear === 'function') {
+			picker.clear();
+		}
+		if (rangeInput) rangeInput.value = '';
+		if (arrivalInput) arrivalInput.value = '';
+		if (departureInput) departureInput.value = '';
+	}
+
+	function initPicker() {
+		if (!rangeInput || !calendarContainer || !window.easepick || typeof window.easepick.create !== 'function') {
+			return null;
+		}
+
+		// Use vendor defaults; just bind to our input and container
+		const picker = new window.easepick.create({
+			element: rangeInput,
+			container: calendarContainer,
+			setup(p) {
+				p.on('select', (e) => {
+					const start = e.detail.start;
+					const end = e.detail.end;
+					const arrival = start ? start.format('YYYY-MM-DD') : '';
+					const departure = end ? end.format('YYYY-MM-DD') : '';
+					if (arrivalInput) arrivalInput.value = arrival;
+					if (departureInput) departureInput.value = departure;
+					if (rangeInput) {
+						rangeInput.value = arrival && departure ? `${arrival} → ${departure}` : '';
+					}
+				});
+			},
+		});
+
+		return picker;
+	}
+
+	// Initialize picker once DOM is ready
+	let pickerInstance = null;
+	function ensurePicker() {
+		if (!pickerInstance) {
+			pickerInstance = initPicker();
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', ensurePicker);
+	} else {
+		ensurePicker();
+	}
+
+	// Listen for reset requests from frontend.js
+	document.addEventListener('wp-mbb-reset-easepick', function () {
+		resetFields(pickerInstance);
+	});
+})();
+</script>

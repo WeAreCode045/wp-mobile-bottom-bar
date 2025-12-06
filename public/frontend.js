@@ -63,9 +63,10 @@
       closeButton: modal.querySelector('.wp-mbb-modal-close'),
       body: modal.querySelector('.wp-mbb-modal-body'),
       select: modal.querySelector('#wp-mbb-hotel-select'),
-      calendarHost: modal.querySelector('.wp-mbb-hotel-selector__calendar'),
-      datesWrapper: modal.querySelector('.wp-mbb-hotel-selector__dates'),
-      cta: modal.querySelector('.wp-mbb-hotel-selector__cta')
+      cta: modal.querySelector('.wp-mbb-hotel-selector__cta'),
+      arrivalInput: modal.querySelector('#wp-mbb-arrival'),
+      departureInput: modal.querySelector('#wp-mbb-departure'),
+      rangeInput: modal.querySelector('#wp-mbb-date-display')
     };
   }
 
@@ -120,7 +121,7 @@
       return;
     }
 
-    const { overlay, select, calendarHost, datesWrapper, cta } = hotelModalRefs;
+    const { overlay, select, cta, arrivalInput, departureInput, rangeInput } = hotelModalRefs;
 
     overlay.setAttribute('aria-hidden', 'false');
     overlay.style.display = 'block';
@@ -141,187 +142,18 @@
       select.appendChild(option);
     });
 
-    // Clear calendar host for fresh initialization
-    calendarHost.innerHTML = '';
-
-    let arrivalValue = '';
-    let departureValue = '';
-
-    function loadEasepickRange(cb) {
-      // Check if easepick is already loaded (should be preloaded)
-      if (window.easepick && typeof window.easepick.create === 'function') {
-        console.log('[Mobile Bottom Bar] Easepick immediately available:', window.easepick);
-        cb(true);
-        return;
-      }
-
-      // Wait for preloaded scripts to initialize
-      console.log('[Mobile Bottom Bar] Waiting for easepick to initialize...');
-      let attempts = 0;
-      const checkInterval = setInterval(function() {
-        attempts++;
-        if (window.easepick && typeof window.easepick.create === 'function') {
-          clearInterval(checkInterval);
-          console.log('[Mobile Bottom Bar] Easepick available after', attempts * 100, 'ms');
-          cb(true);
-        } else if (attempts >= 50) { // 50 * 100ms = 5 seconds
-          clearInterval(checkInterval);
-          console.error('[Mobile Bottom Bar] Easepick not available after 5s');
-          cb(false);
-        }
-      }, 100);
-    }
-
-    function showErrorNotification(message) {
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'wp-mbb-hotel-selector__error';
-      errorDiv.textContent = message;
-      datesWrapper.appendChild(errorDiv);
-    }
-
-    function initRangePicker() {
-      const easepickGlobal = (typeof window.easepick !== 'undefined') ? window.easepick : null;
-      if (!easepickGlobal || typeof easepickGlobal.create !== 'function') {
-        console.error('[Mobile Bottom Bar] Easepick not available');
-        showErrorNotification('Calendar library failed to load. Please refresh the page and try again.');
-        return;
-      }
-
-      const rangeEl = document.createElement('input');
-      rangeEl.type = 'text';
-      rangeEl.className = 'wp-mbb-hotel-selector__range-input';
-      rangeEl.placeholder = 'Select dates';
-      calendarHost.appendChild(rangeEl);
-      datesWrapper.appendChild(calendarHost);
-
-      try {
-        console.log('[Mobile Bottom Bar] Initializing easepick with defaults from easepick.js');
-        // easepick.create is a class constructor; rely on defaults defined in the bundled easepick.js
-        const picker = new easepickGlobal.create({
-          element: rangeEl,
-          setup(p) {
-            console.log('[Mobile Bottom Bar] Easepick setup called, picker:', p);
-            p.on('select', (e) => {
-              console.log('[Mobile Bottom Bar] Date selected:', e.detail);
-              const start = e.detail.start;
-              const end = e.detail.end;
-              arrivalValue = start ? start.format('YYYY-MM-DD') : '';
-              departureValue = end ? end.format('YYYY-MM-DD') : '';
-              rangeEl.value = arrivalValue && departureValue ? `${arrivalValue} → ${departureValue}` : '';
-            });
-          },
-        });
-        console.log('[Mobile Bottom Bar] Easepick picker created:', picker);
-        
-        if (picker && picker.ui && picker.ui.wrapper) {
-          console.log('[Mobile Bottom Bar] Making calendar wrapper visible');
-          picker.ui.wrapper.style.display = 'block';
-          picker.ui.wrapper.style.visibility = 'visible';
-        }
-        
-        if (!picker) {
-          console.error('[Mobile Bottom Bar] Failed to create picker instance');
-          showErrorNotification('Calendar initialization failed. Please refresh the page and try again.');
-        }
-      } catch (err) {
-        console.error('[Mobile Bottom Bar] Failed to init range picker:', err);
-        showErrorNotification('Calendar error: ' + err.message + '. Please refresh the page and try again.');
-      }
-    }
-
-    // Inject styles for the multi-hotel modal if not already present
-    (function injectStyles() {
-      const styleId = 'wp-mbb-hotel-selector-styles';
-      if (document.getElementById(styleId)) return;
-      
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        .wp-mbb-hotel-selector {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-          padding: 10px 0;
-        }
-        .wp-mbb-hotel-selector__label {
-          display: block;
-          font-weight: 600;
-          margin-bottom: 5px;
-          font-size: 14px;
-        }
-        .wp-mbb-hotel-selector__select {
-          width: 100%;
-          padding: 8px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          font-size: 14px;
-        }
-        .wp-mbb-hotel-selector__dates {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        .wp-mbb-hotel-selector__calendar {
-          width: 100%;
-        }
-        .wp-mbb-hotel-selector__range-input {
-          width: 100%;
-          padding: 8px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          font-size: 14px;
-          background: white;
-        }
-        .wp-mbb-hotel-selector__error {
-          padding: 12px;
-          background-color: #fee;
-          border: 1px solid #f88;
-          border-radius: 4px;
-          color: #c33;
-          font-size: 14px;
-          font-weight: 500;
-        }
-        .wp-mbb-hotel-selector__cta {
-          margin-top: 10px;
-        }
-        .wp-mbb-hotel-selector__calendar {
-          display: block !important;
-        }
-        .easepick,
-        .easepick-wrapper {
-          display: block !important;
-          visibility: visible !important;
-          width: 100% !important;
-          max-width: none !important;
-        }
-        .easepick-body {
-          display: block !important;
-          visibility: visible !important;
-        }
-        .easepick-container {
-          display: flex !important;
-          visibility: visible !important;
-        }
-      `;
-      document.head.appendChild(style);
-    })();
-
-    // Initialize calendar (easepick assets already enqueued via PHP)
-    loadEasepickRange(function (ok) {
-      if (!ok) {
-        console.error('[Mobile Bottom Bar] Easepick library unavailable');
-        showErrorNotification('Date calendar failed to load. Please refresh the page and try again.');
-        return;
-      }
-      initRangePicker();
-    });
+    // Reset date fields and notify easepick to reset
+    if (arrivalInput) arrivalInput.value = '';
+    if (departureInput) departureInput.value = '';
+    if (rangeInput) rangeInput.value = '';
+    document.dispatchEvent(new CustomEvent('wp-mbb-reset-easepick'));
 
     // Attach CTA button handler (button already exists in template)
-    cta.addEventListener('click', function (e) {
+    cta.onclick = function (e) {
       e.preventDefault();
       const hotelId = select.value;
-      const arrival = arrivalValue || '';
-      const departure = departureValue || '';
+      const arrival = arrivalInput ? arrivalInput.value : '';
+      const departure = departureInput ? departureInput.value : '';
 
       if (!hotelId) {
         console.warn('[Mobile Bottom Bar] No hotel selected');
@@ -347,7 +179,7 @@
 
       // Fallback: trigger existing modal flow with selected hotel
       triggerLighthouseCalendar(payload, hotelId);
-    });
+    };
   }
 
   function closeHotelSelectionModal(hotelModalRefs) {

@@ -639,6 +639,23 @@
   margin-top: 0.5rem;
 }
 
+.wp-mbb-hotel-selector__range-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  color: #1e293b;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.wp-mbb-hotel-selector__range-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
 .wp-mbb-hotel-selector__cta {
   width: 100%;
   padding: 0.95rem 1rem;
