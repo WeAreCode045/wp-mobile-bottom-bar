@@ -83,43 +83,7 @@
     return { overlay, container, closeButton, title, body };
   }
 
-  function triggerLighthouseCalendar(payload, selectedHotelId) {
-    if (!payload || !payload.formId) {
-      return false;
-    }
-
-    var form = document.getElementById(payload.formId);
-
-    if (!form) {
-      return false;
-    }
-
-    // If a hotel was selected, update the form with that hotel
-    if (selectedHotelId) {
-      var hotelIdField = form.querySelector('input[name="hotel_id"]');
-      if (hotelIdField) {
-        hotelIdField.value = selectedHotelId;
-      }
-      form.setAttribute('data-hotel-id', selectedHotelId);
-    }
-
-    try {
-      document.dispatchEvent(new CustomEvent('mlb-maybe-init-modal', { detail: { form: form } }));
-    } catch (error) {
-      console.warn('[Mobile Bottom Bar] Failed to trigger modal init.', error);
-    }
-
-    var trigger = form.querySelector('[data-trigger-modal="true"]') || form.querySelector('.mlb-book-room-btn');
-
-    if (!trigger) {
-      return false;
-    }
-
-    trigger.click();
-    return true;
-  }
-
-  function openHotelSelectionModal(hotelModalRefs, hotels, payload) {
+  function openHotelSelectionModal(hotelModalRefs, hotels, bookingUrl) {
     const { overlay, body, closeButton } = hotelModalRefs;
 
     overlay.setAttribute('aria-hidden', 'false');
@@ -147,30 +111,12 @@
       button.addEventListener('click', function (e) {
         e.preventDefault();
         const hotelId = hotel.id;
-        const hotelName = hotel.name;
         
-        // Update form with selected hotel
-        var form = document.getElementById(payload.formId);
-        if (form) {
-          form.setAttribute('data-hotel-id', hotelId);
-          form.setAttribute('data-hotel-name', hotelName);
-          
-          var hotelIdField = form.querySelector('input[name="hotel_id"]');
-          if (hotelIdField) {
-            hotelIdField.value = hotelId;
-          }
-          
-          var hotelNameField = form.querySelector('input[name="hotel_name"]');
-          if (hotelNameField) {
-            hotelNameField.value = hotelName;
-          }
-        }
+        // Build booking URL with hotel ID
+        const url = bookingUrl + '?Arrival=&Departure=&hotel_id=' + encodeURIComponent(hotelId);
         
-        // Close hotel selection modal
-        closeHotelSelectionModal(hotelModalRefs);
-        
-        // Open calendar modal with selected hotel
-        triggerLighthouseCalendar(payload, hotelId);
+        // Redirect to booking page
+        window.location.href = url;
       });
 
       li.appendChild(button);
@@ -302,28 +248,14 @@
       const type = target.dataset.type;
       const linkBehavior = target.dataset.linkTarget;
 
-      console.log('[Mobile Bottom Bar] Click type:', type);
-
-      if (type === 'mylighthouse-multi') {
+      if (type === 'hotel-booking-multi') {
         event.preventDefault();
-        console.log('[Mobile Bottom Bar] Multi-hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
         
-        // Show hotel selection modal first
+        // Show hotel selection modal
         if (payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
-          console.log('[Mobile Bottom Bar] Opening hotel selection modal with', payload.hotels.length, 'hotels');
-          openHotelSelectionModal(hotelModalRefs, payload.hotels, payload);
-        } else {
-          console.log('[Mobile Bottom Bar] Invalid payload for multi-hotel', payload);
+          openHotelSelectionModal(hotelModalRefs, payload.hotels, payload.bookingUrl);
         }
-        return;
-      }
-
-      if (type === 'mylighthouse') {
-        event.preventDefault();
-        console.log('[Mobile Bottom Bar] Single hotel mode detected');
-        const payload = parsePayload(target.dataset.payload);
-        triggerLighthouseCalendar(payload);
         return;
       }
 

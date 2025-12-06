@@ -1365,10 +1365,6 @@ final class Mobile_Bottom_Bar_Plugin {
     }
 
     private function should_render_lighthouse_button(array $bar): bool {
-        if (!$this->has_mylighthouse_plugin()) {
-            return false;
-        }
-
         $config = $bar['lighthouseIntegration'] ?? null;
 
         if (!is_array($config)) {
@@ -1381,14 +1377,12 @@ final class Mobile_Bottom_Bar_Plugin {
 
         // Check if single hotel mode with hotel selected
         if (!empty($config['hotelId'])) {
-            $meta = $this->get_mylighthouse_bootstrap();
-            return !empty($meta['bookingPageUrl']);
+            return true;
         }
 
         // Check if multiple hotels mode with hotels selected
         if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
-            $meta = $this->get_mylighthouse_bootstrap();
-            return !empty($meta['bookingPageUrl']);
+            return true;
         }
 
         return false;
@@ -1413,7 +1407,7 @@ final class Mobile_Bottom_Bar_Plugin {
 
     private function build_lighthouse_item(array $bar): ?array {
         $config = $bar['lighthouseIntegration'] ?? [];
-        $form_id = $this->get_lighthouse_form_id($bar);
+        $booking_base_url = 'https://new.differenthotels.be/book-now/';
 
         // Handle multiple hotels mode
         if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
@@ -1426,17 +1420,17 @@ final class Mobile_Bottom_Bar_Plugin {
                 'target' => '_self',
                 'rel' => '',
                 'is_active' => false,
-                'type' => 'mylighthouse-multi',
+                'type' => 'hotel-booking-multi',
                 'payload' => [
-                    'formId' => $form_id,
                     'hotels' => $config['selectedHotels'],
+                    'bookingUrl' => $booking_base_url,
                     'isMultiple' => true,
                 ],
                 'linkTargetBehavior' => 'self',
             ];
         }
 
-        // Handle single hotel mode
+        // Handle single hotel mode - direct redirect
         $hotel_id = $config['hotelId'] ?? '';
 
         if ($hotel_id === '') {
@@ -1448,88 +1442,23 @@ final class Mobile_Bottom_Bar_Plugin {
 
         return [
             'label' => $label,
-            'href' => '#',
+            'href' => $booking_base_url . '?Arrival=&Departure=&hotel_id=' . urlencode($hotel_id),
             'icon' => 'calendar',
             'target' => '_self',
             'rel' => '',
             'is_active' => false,
-            'type' => 'mylighthouse',
+            'type' => 'link',
             'payload' => [
-                'formId' => $form_id,
-                'hotelId' => $hotel_id,
+                'href' => $booking_base_url . '?Arrival=&Departure=&hotel_id=' . urlencode($hotel_id),
+                'linkTarget' => 'self',
             ],
             'linkTargetBehavior' => 'self',
         ];
     }
 
     private function render_lighthouse_form(array $bar): void {
-        if (!$this->should_render_lighthouse_button($bar)) {
-            return;
-        }
-
-        $meta = $this->get_mylighthouse_bootstrap();
-        $booking_url = $meta['bookingPageUrl'] ?? '';
-        $config = $bar['lighthouseIntegration'] ?? [];
-
-        if ($booking_url === '') {
-            return;
-        }
-
-        if (!$this->lighthouse_templates_printed) {
-            $this->maybe_include_lighthouse_templates();
-        }
-
-        $form_id = $this->get_lighthouse_form_id($bar);
-
-        // Handle multiple hotels mode - render a single form (hotel selector will be injected by JS)
-        if (!empty($config['allowMultipleHotels']) && is_array($config['selectedHotels']) && count($config['selectedHotels']) > 0) {
-            $first_hotel = $config['selectedHotels'][0];
-            $first_hotel_id = $first_hotel['id'] ?? '';
-            $first_hotel_name = $first_hotel['name'] ?? '';
-
-            echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '" data-multi-hotel="true">';
-            echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
-            echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type wp-mbb-multi-hotel-form" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($first_hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($first_hotel_name) . '" data-room-name="">';
-            echo '<input type="hidden" name="hotel_id" value="' . esc_attr($first_hotel_id) . '" />';
-            echo '<input type="hidden" name="room_id" value="" />';
-            echo '<input type="hidden" name="hotel_name" value="' . esc_attr($first_hotel_name) . '" />';
-            echo '<input type="hidden" name="room_name" value="" />';
-            echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
-            echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
-            echo '<div class="form-actions">';
-            echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
-            echo '</div>';
-            echo '</form>';
-            echo '</div>';
-            echo '</div>';
-            return;
-        }
-
-        // Handle single hotel mode
-        $hotel_id = $config['hotelId'] ?? '';
-
-        if ($hotel_id === '') {
-            return;
-        }
-
-        $hotel_name = $config['hotelName'] ?? '';
-        $hotel_name = is_string($hotel_name) && $hotel_name !== '' ? $hotel_name : __('Selected hotel', 'mobile-bottom-bar');
-
-        echo '<div class="wp-mbb__mylighthouse-scaffold" aria-hidden="true" data-bar-id="' . esc_attr($bar['id']) . '">';
-        echo '<div class="mlb-booking-form mlb-room-form" data-single-button="true">';
-        echo '<form id="' . esc_attr($form_id) . '" class="mlb-form mlb-room-form-type" method="GET" action="' . esc_url($booking_url) . '" data-hotel-id="' . esc_attr($hotel_id) . '" data-room-id="" data-hotel-name="' . esc_attr($hotel_name) . '" data-room-name="">';
-        echo '<input type="hidden" name="hotel_id" value="' . esc_attr($hotel_id) . '" />';
-        echo '<input type="hidden" name="room_id" value="" />';
-        echo '<input type="hidden" name="hotel_name" value="' . esc_attr($hotel_name) . '" />';
-        echo '<input type="hidden" name="room_name" value="" />';
-        echo '<input type="hidden" class="mlb-checkin" name="Arrival" />';
-        echo '<input type="hidden" class="mlb-checkout" name="Departure" />';
-        echo '<div class="form-actions">';
-        echo '<button type="button" class="mlb-submit-btn mlb-book-room-btn mlb-btn-primary" data-trigger-modal="true">' . esc_html__('Check availability', 'mobile-bottom-bar') . '</button>';
-        echo '</div>';
-        echo '</form>';
-        echo '</div>';
-        echo '</div>';
+        // No longer needed - hotel selection is handled entirely by JS modal and redirect
+        return;
     }
 
     private function maybe_include_lighthouse_templates(): void {
