@@ -672,27 +672,47 @@
 #wp-mbb-multi-hotel-modal .easepick-day.end {
   background-color: #ef4444 !important;
   color: #ffffff !important;
+  border-color: #ef4444 !important;
 }
 
 #wp-mbb-multi-hotel-modal .easepick-day.start:hover,
 #wp-mbb-multi-hotel-modal .easepick-day.end:hover {
   background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+#wp-mbb-multi-hotel-modal .easepick-day.start:focus,
+#wp-mbb-multi-hotel-modal .easepick-day.end:focus {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
 }
 
 /* In-range dates - light grey background */
 #wp-mbb-multi-hotel-modal .easepick-day.in-range {
   background-color: #e5e7eb !important;
   color: #1f2937 !important;
+  border-color: #e5e7eb !important;
 }
 
 #wp-mbb-multi-hotel-modal .easepick-day.in-range:hover {
   background-color: #d1d5db !important;
+  border-color: #d1d5db !important;
+}
+
+#wp-mbb-multi-hotel-modal .easepick-day.in-range:focus {
+  background-color: #e5e7eb !important;
+  border-color: #e5e7eb !important;
 }
 
 /* Disabled dates styling */
 #wp-mbb-multi-hotel-modal .easepick-day.locked {
-  opacity: 0.4;
-  cursor: not-allowed;
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+/* Ensure styles persist through state changes */
+#wp-mbb-multi-hotel-modal .easepick-day[style*="background"] {
+  background-color: inherit !important;
 }
 
 .wp-mbb-hotel-selector__cta {

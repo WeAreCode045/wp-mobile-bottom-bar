@@ -37,7 +37,7 @@
 	--red-color: #dc143c;
 	/* Override easepick colors with our custom CSS variables */
 	--color-fg-primary: var(--cqb-calendar-startend-bg, #dc143c);
-	--color-fg-selected: var(--cqb-calendar-startend-color, #ffffff);
+	--color-fg-selected: var(--cqb-calendar-startend-color, #dc143c);
 	--color-bg-inrange: var(--cqb-calendar-inrange-bg, #f0f0f08c);
 }
 

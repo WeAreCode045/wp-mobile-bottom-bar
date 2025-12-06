@@ -230,6 +230,9 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                             }
 
                             console.log('[WP-MBB] Dates selected:', arrival, departure);
+                            
+                            // Reapply custom colors after easepick updates the DOM
+                            reapplyDateColors();
                         });
                     }
                 };
@@ -267,6 +270,23 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
         if (triggerInput) triggerInput.value = '';
         if (arrivalHidden) arrivalHidden.value = '';
         if (departureHidden) departureHidden.value = '';
+    }
+
+    // Reapply custom date colors after easepick updates the DOM
+    function reapplyDateColors() {
+        setTimeout(() => {
+            const days = calendarContainer.querySelectorAll('.easepick-day');
+            days.forEach(day => {
+                if (day.classList.contains('start') || day.classList.contains('end')) {
+                    day.style.backgroundColor = '#ef4444 !important';
+                    day.style.color = '#ffffff !important';
+                } else if (day.classList.contains('in-range')) {
+                    day.style.backgroundColor = '#e5e7eb !important';
+                    day.style.color = '#1f2937 !important';
+                }
+            });
+            console.log('[WP-MBB] Date colors reapplied');
+        }, 50);
     }
 
     // Wait for easepick to load, then init picker
