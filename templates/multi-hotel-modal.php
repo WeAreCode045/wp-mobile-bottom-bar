@@ -11,7 +11,9 @@
 defined('ABSPATH') || exit;
 
 // Enqueue easepick assets for the date picker
-$plugin_url = plugin_dir_url(dirname(__FILE__));
+// Get the plugin root directory (two levels up from templates/)
+$plugin_root = dirname(dirname(__FILE__));
+$plugin_url = plugin_dir_url($plugin_root);
 
 // Enqueue easepick CSS from local vendor directory
 wp_enqueue_style(
@@ -21,10 +23,10 @@ wp_enqueue_style(
     '1.2.1'
 );
 
-// Enqueue easepick dependencies from local vendor directory
+// Enqueue easepick dependencies from CDN (UMD bundles work best from CDN)
 wp_enqueue_script(
     'easepick-datetime',
-    $plugin_url . 'public/vendor/easepick/datetime.js',
+    'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
     [],
     '1.2.1',
     true
@@ -32,7 +34,7 @@ wp_enqueue_script(
 
 wp_enqueue_script(
     'easepick-base-plugin',
-    $plugin_url . 'public/vendor/easepick/base-plugin.js',
+    'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
     ['easepick-datetime'],
     '1.2.1',
     true
@@ -107,6 +109,9 @@ wp_enqueue_script(
 </div>
 
 <script>
+// Make plugin URL available to inline script
+window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
+
 (function() {
     'use strict';
 
@@ -145,11 +150,25 @@ wp_enqueue_script(
 
         function tryInitPicker() {
             attempts++;
+            
+            // Check if easepick is loaded
+            if (typeof window.easepick === 'undefined') {
+                console.log(`[WP-MBB] Attempt ${attempts}: window.easepick not found`);
+                if (attempts > 50) {
+                    console.error('[WP-MBB] EasePick failed to load after 50 attempts');
+                    console.log('[WP-MBB] Available globals:', Object.keys(window).filter(k => k.includes('easepick') || k.includes('Easepick')));
+                    return;
+                }
+                setTimeout(tryInitPicker, 100);
+                return;
+            }
+            
             const easepickRef = window.easepick;
+            console.log('[WP-MBB] EasePick found, checking properties:', Object.keys(easepickRef));
 
             if (!easepickRef || !easepickRef.Core) {
                 if (attempts > 50) {
-                    console.error('[WP-MBB] EasePick failed to load after 50 attempts');
+                    console.error('[WP-MBB] EasePick.Core not found after 50 attempts');
                     return;
                 }
                 setTimeout(tryInitPicker, 100);
@@ -171,6 +190,9 @@ wp_enqueue_script(
                 const pickerConfig = {
                     element: pickerElement,
                     inline: true,
+                    css: [
+                        window.wpMbbPluginUrl + 'public/vendor/easepick/easepick.css'
+                    ],
                     plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
                     RangePlugin: {
                         tooltip: true,
