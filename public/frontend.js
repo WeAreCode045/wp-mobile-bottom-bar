@@ -91,7 +91,12 @@
     // Construct the correct form ID
     var formId = payload.formId;
     if (selectedHotelId) {
-      formId = payload.formId + '-hotel-' + selectedHotelId;
+      // Mirror PHP's sanitize_key so the form ID matches the rendered markup
+      var sanitizedHotelId = String(selectedHotelId).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      if (sanitizedHotelId !== selectedHotelId) {
+        console.log('[Mobile Bottom Bar] Sanitized hotelId from', selectedHotelId, 'to', sanitizedHotelId);
+      }
+      formId = payload.formId + '-hotel-' + sanitizedHotelId;
     }
 
     console.log('[Mobile Bottom Bar] Looking for form:', formId);
