@@ -268,8 +268,8 @@
         id: barId,
         name: formData.get('bar_name') || 'Untitled Bar',
         enabled: true,
-        menuMode: formData.get('bar_menu') || 'wordpress',
-        selectedMenu: '', // Will be set based on selectedMenu if available
+        menuMode: customItems.length > 0 ? 'custom' : 'wordpress',
+        selectedMenu: customItems.length > 0 ? '' : (formData.get('bar_menu') || ''),
         barStyle: 'dark',
         accentColor: '#6366f1',
         barBackgroundColor: formData.get('bg_color') || '#0f172a',
