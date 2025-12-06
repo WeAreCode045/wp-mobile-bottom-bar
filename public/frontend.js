@@ -236,14 +236,19 @@
         'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.umd.min.js',
         'https://cdn.jsdelivr.net/npm/@easepick/range-plugin@1.2.1/dist/index.umd.min.js',
       ], function () {
-        const ok = (window.easepick && typeof window.easepick.create === 'function' && (window.easepick.RangePlugin || (window.easepick.plugins && window.easepick.plugins.RangePlugin)));
-        cb(ok);
+        // Give async operations time to complete
+        setTimeout(function () {
+          const ok = (window.easepick && typeof window.easepick.create === 'function');
+          console.log('[Mobile Bottom Bar] Easepick load result:', ok, window.easepick);
+          cb(ok);
+        }, 100);
       });
     }
 
     function initRangePicker() {
       const easepickGlobal = (typeof window.easepick !== 'undefined') ? window.easepick : null;
-      if (!easepickGlobal || typeof easepickGlobal.create !== 'function' || !easepickGlobal.RangePlugin) {
+      if (!easepickGlobal || typeof easepickGlobal.create !== 'function') {
+        console.warn('[Mobile Bottom Bar] Easepick not ready, using fallback');
         datesWrapper.appendChild(fallbackInputs);
         arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
         departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
@@ -291,8 +296,78 @@
       }
     }
 
+    // Inject styles for the multi-hotel modal if not already present
+    (function injectStyles() {
+      const styleId = 'wp-mbb-hotel-selector-styles';
+      if (document.getElementById(styleId)) return;
+      
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .wp-mbb-hotel-selector {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+          padding: 10px 0;
+        }
+        .wp-mbb-hotel-selector__label {
+          display: block;
+          font-weight: 600;
+          margin-bottom: 5px;
+          font-size: 14px;
+        }
+        .wp-mbb-hotel-selector__select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+        .wp-mbb-hotel-selector__dates {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .wp-mbb-hotel-selector__calendar {
+          width: 100%;
+        }
+        .wp-mbb-hotel-selector__range-input {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 14px;
+          background: white;
+        }
+        .wp-mbb-hotel-selector__fallback {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .wp-mbb-hotel-selector__date-input {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+        .wp-mbb-hotel-selector__cta {
+          margin-top: 10px;
+        }
+        .easepick {
+          width: 100%;
+          max-width: none;
+        }
+        .easepick-wrapper {
+          width: 100% !important;
+        }
+      `;
+      document.head.appendChild(style);
+    })();
+
     loadEasepickRange(function (ok) {
       if (!ok) {
+        console.log('[Mobile Bottom Bar] Easepick unavailable, using native date inputs');
         datesWrapper.appendChild(fallbackInputs);
         arrivalNative.addEventListener('change', function () { arrivalValue = arrivalNative.value; });
         departureNative.addEventListener('change', function () { departureValue = departureNative.value; });
