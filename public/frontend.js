@@ -281,24 +281,28 @@
     });
 
     bar.addEventListener('click', function (event) {
+      console.log('[Mobile Bottom Bar] Click event fired on bar');
       const target = event.target.closest('a.wp-mbb__item');
 
       if (!target) {
+        console.log('[Mobile Bottom Bar] No wp-mbb__item target found');
         return;
       }
 
       const type = target.dataset.type;
       const linkBehavior = target.dataset.linkTarget;
 
-      console.log('[Mobile Bottom Bar] Click type:', type);
+      console.log('[Mobile Bottom Bar] Click type:', type, 'target:', target);
 
       if (type === 'mylighthouse-multi') {
         event.preventDefault();
+        event.stopPropagation();
         console.log('[Mobile Bottom Bar] Multi-hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
+        console.log('[Mobile Bottom Bar] Parsed payload:', payload);
         
         // Show hotel selection modal first
-        if (payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
+        if (payload && payload.isMultiple && Array.isArray(payload.hotels) && payload.hotels.length > 0) {
           console.log('[Mobile Bottom Bar] Opening hotel selection modal with', payload.hotels.length, 'hotels');
           openHotelSelectionModal(hotelModalRefs, payload.hotels, payload);
         } else {
@@ -309,6 +313,7 @@
 
       if (type === 'mylighthouse') {
         event.preventDefault();
+        event.stopPropagation();
         console.log('[Mobile Bottom Bar] Single hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
         triggerLighthouseCalendar(payload);
