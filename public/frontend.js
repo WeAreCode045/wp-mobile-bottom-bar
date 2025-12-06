@@ -170,45 +170,28 @@
     calendarHost.className = 'wp-mbb-hotel-selector__calendar';
 
     function loadEasepickRange(cb) {
-      // Check if easepick is already loaded
+      // Check if easepick is already loaded (should be preloaded)
       if (window.easepick && typeof window.easepick.create === 'function') {
         console.log('[Mobile Bottom Bar] Easepick immediately available:', window.easepick);
         cb(true);
         return;
       }
 
-      // Load easepick scripts from local vendor directory
-      const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
-        ? wpMbbConfig.pluginUrl 
-        : '/wp-content/plugins/wp-mobile-bottom-bar/';
-      
-      function loadScript(src, callback) {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = callback;
-        script.onerror = function() {
-          console.error('[Mobile Bottom Bar] Failed to load script:', src);
-          callback(false);
-        };
-        document.head.appendChild(script);
-      }
-
-      // Load datetime dependency first, then core, then range plugin
-      console.log('[Mobile Bottom Bar] Loading easepick from local vendor directory');
-      loadScript('https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js', function() {
-        loadScript('https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js', function() {
-          loadScript(pluginUrl + 'public/vendor/easepick/easepick.js', function() {
-            loadScript(pluginUrl + 'public/vendor/easepick/easepick-range.js', function() {
-              // Give scripts time to initialize
-              setTimeout(function() {
-                const ok = (window.easepick && typeof window.easepick.create === 'function');
-                console.log('[Mobile Bottom Bar] Easepick load complete:', ok, window.easepick);
-                cb(ok);
-              }, 100);
-            });
-          });
-        });
-      });
+      // Wait for preloaded scripts to initialize
+      console.log('[Mobile Bottom Bar] Waiting for easepick to initialize...');
+      let attempts = 0;
+      const checkInterval = setInterval(function() {
+        attempts++;
+        if (window.easepick && typeof window.easepick.create === 'function') {
+          clearInterval(checkInterval);
+          console.log('[Mobile Bottom Bar] Easepick available after', attempts * 100, 'ms');
+          cb(true);
+        } else if (attempts >= 50) { // 50 * 100ms = 5 seconds
+          clearInterval(checkInterval);
+          console.error('[Mobile Bottom Bar] Easepick not available after 5s');
+          cb(false);
+        }
+      }, 100);
     }
 
     function showErrorNotification(message) {
@@ -493,6 +476,44 @@
 
     if (!bar) {
       return;
+    }
+
+    // Preload easepick if multi-hotel button exists
+    const hasMultiHotel = bar.querySelector('a.wp-mbb__item[data-type="mylighthouse-multi"]');
+    if (hasMultiHotel) {
+      console.log('[Mobile Bottom Bar] Multi-hotel button detected, preloading easepick scripts');
+      const pluginUrl = (typeof wpMbbConfig !== 'undefined' && wpMbbConfig.pluginUrl) 
+        ? wpMbbConfig.pluginUrl 
+        : '/wp-content/plugins/wp-mobile-bottom-bar/';
+      
+      // Preload scripts
+      const scripts = [
+        'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
+        pluginUrl + 'public/vendor/easepick/easepick.js',
+        pluginUrl + 'public/vendor/easepick/easepick-range.js'
+      ];
+      
+      function loadScriptSequentially(urls, index) {
+        if (index >= urls.length) {
+          console.log('[Mobile Bottom Bar] All easepick scripts preloaded successfully');
+          return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = urls[index];
+        script.onload = function() {
+          console.log('[Mobile Bottom Bar] Loaded:', urls[index]);
+          loadScriptSequentially(urls, index + 1);
+        };
+        script.onerror = function() {
+          console.error('[Mobile Bottom Bar] Failed to load:', urls[index]);
+          loadScriptSequentially(urls, index + 1); // Continue anyway
+        };
+        document.head.appendChild(script);
+      }
+      
+      loadScriptSequentially(scripts, 0);
     }
 
     const overlayRefs = createOverlay();
