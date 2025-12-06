@@ -164,7 +164,7 @@ final class Mobile_Bottom_Bar_Plugin {
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [$this, 'rest_save_settings'],
                 'permission_callback' => [$this, 'permissions_check'],
-                'args' => $this->get_rest_args(),
+                'schema' => $this->get_rest_schema(),
             ],
         ];
 
@@ -181,7 +181,17 @@ final class Mobile_Bottom_Bar_Plugin {
     }
 
     public function rest_save_settings(\WP_REST_Request $request): \WP_REST_Response {
-        $data = $this->sanitize_settings((array) $request->get_json_params());
+        $incoming_data = (array) $request->get_json_params();
+        
+        // Get existing settings
+        $existing_settings = $this->get_settings();
+        
+        // Merge incoming data with existing settings
+        // This allows partial updates (e.g., updating just the bars)
+        $merged_data = array_merge($existing_settings, $incoming_data);
+        
+        // Sanitize the merged data
+        $data = $this->sanitize_settings($merged_data);
 
         update_option(self::OPTION_KEY, $data);
 
@@ -792,6 +802,36 @@ final class Mobile_Bottom_Bar_Plugin {
                 'type' => 'object',
                 'required' => false,
             ],
+        ];
+    }
+
+    private function get_rest_schema(): array {
+        return [
+            '$schema' => 'http://json-schema.org/draft-04/schema#',
+            'title' => 'Mobile Bottom Bar Settings',
+            'type' => 'object',
+            'properties' => [
+                'bars' => [
+                    'type' => 'object',
+                    'additionalProperties' => true,
+                ],
+                'globalStyle' => [
+                    'type' => 'object',
+                    'additionalProperties' => true,
+                ],
+                'defaultCustomMenu' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'additionalProperties' => true,
+                    ],
+                ],
+                'defaultModalStyle' => [
+                    'type' => 'object',
+                    'additionalProperties' => true,
+                ],
+            ],
+            'additionalProperties' => true,
         ];
     }
 
