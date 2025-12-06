@@ -19,9 +19,13 @@
 
   const AdminPage = {
     init: function () {
+      console.log('[Mobile Bottom Bar Admin] Initializing...');
       this.cacheElements();
+      console.log('[Mobile Bottom Bar Admin] Form element found:', !!this.form);
+      console.log('[Mobile Bottom Bar Admin] Status element found:', !!this.statusEl);
       this.bindEvents();
       this.updateLighthouseUI();
+      console.log('[Mobile Bottom Bar Admin] Initialization complete');
     },
 
     cacheElements: function () {
@@ -74,10 +78,20 @@
     },
 
     handleFormSubmit: function (e) {
+      console.log('[Mobile Bottom Bar Admin] handleFormSubmit called');
       e.preventDefault();
+
+      if (!this.form) {
+        console.error('[Mobile Bottom Bar Admin] Form element not found!');
+        this.showStatus('Error: Form element not found', 'error');
+        return;
+      }
 
       const formData = new FormData(this.form);
       const barId = formData.get('bar_id');
+      
+      console.log('[Mobile Bottom Bar Admin] Bar ID:', barId);
+      console.log('[Mobile Bottom Bar Admin] Form data keys:', Array.from(formData.keys()));
 
       // Build complete bar object with all required fields
       // Start with a base structure that includes all required fields
