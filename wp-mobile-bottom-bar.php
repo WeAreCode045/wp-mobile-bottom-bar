@@ -134,9 +134,11 @@ final class Mobile_Bottom_Bar_Plugin {
 
 
         // Enqueue Google Maps Places API for address autocomplete
+        $settings = $this->get_settings();
+        $api_key = $settings['contactFormSettings']['googleApiKey'] ?? '';
         wp_enqueue_script(
             'google-maps-places',
-            'https://maps.googleapis.com/maps/api/js?key=&libraries=places',
+            'https://maps.googleapis.com/maps/api/js?key=' . urlencode($api_key) . '&libraries=places',
             [],
             null,
             false
@@ -544,6 +546,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'subject' => 'New Contact Form Submission from {name}',
             'successMessage' => 'Thank you! Your message has been sent.',
             'errorMessage' => 'Sorry, there was an error sending your message. Please try again.',
+            'googleApiKey' => '',
         ];
     }
 
@@ -557,6 +560,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'subject' => sanitize_text_field($settings['subject'] ?? $defaults['subject']),
             'successMessage' => sanitize_text_field($settings['successMessage'] ?? $defaults['successMessage']),
             'errorMessage' => sanitize_text_field($settings['errorMessage'] ?? $defaults['errorMessage']),
+            'googleApiKey' => sanitize_text_field($settings['googleApiKey'] ?? $defaults['googleApiKey']),
         ];
     }
 
