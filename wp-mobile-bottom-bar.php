@@ -1821,11 +1821,10 @@ final class Mobile_Bottom_Bar_Plugin {
             return false;
         }
 
-        // Try to use PHPMailer if available (WordPress includes it)
-        if (!class_exists('\PHPMailer\PHPMailer\PHPMailer')) {
-            // Fallback to wp_mail
-            return false;
-        }
+        // Load WordPress PHPMailer
+        require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+        require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+        require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
 
         try {
             $mailer = new \PHPMailer\PHPMailer\PHPMailer(true);
