@@ -541,7 +541,7 @@
 }
 
 #wp-mbb-multi-hotel-modal.is-visible {
-  display: flex;
+  display: flex!important;
 }
 
 .wp-mbb-modal-container {
