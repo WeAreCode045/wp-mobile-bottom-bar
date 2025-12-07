@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Mobby - Mobile Bottom Bar
  * Description:       Build your own dynamic mobile bottom navigation bar from the WordPress dashboard.
- * Version:           2.2.0
+ * Version:           2.1.4
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Code045
@@ -133,17 +133,13 @@ final class Mobile_Bottom_Bar_Plugin {
 		);
 
 
-        // Enqueue Google Maps Places API for address autocomplete (async, doesn't block React)
-        $settings = $this->get_settings();
-        $general_settings = $settings['generalSettings'] ?? $this->get_default_general_settings();
-        $api_key = $general_settings['googleApiKey'] ?? '';
-        
+        // Enqueue Google Maps Places API for address autocomplete
         wp_enqueue_script(
             'google-maps-places',
-            'https://maps.googleapis.com/maps/api/js?key=' . urlencode($api_key) . '&libraries=places',
+            'https://maps.googleapis.com/maps/api/js?key=&libraries=places',
             [],
             null,
-            true
+            false
         );
 
         $entry = $this->get_manifest_entry();
@@ -158,7 +154,7 @@ final class Mobile_Bottom_Bar_Plugin {
         wp_enqueue_script(
             self::SCRIPT_HANDLE,
             $asset_base . $entry['file'],
-            [],
+            ['google-maps-places'],
             self::VERSION,
             true
         );
@@ -362,7 +358,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'globalStyle' => $this->sanitize_style($raw['globalStyle'] ?? null),
             'defaultCustomMenu' => $this->sanitize_custom_items($raw['defaultCustomMenu'] ?? []),
             'defaultModalStyle' => isset($raw['defaultModalStyle']) ? $this->sanitize_modal_style($raw['defaultModalStyle']) : $this->get_default_modal_style(),
-            'generalSettings' => isset($raw['generalSettings']) ? $this->sanitize_general_settings($raw['generalSettings']) : $this->get_default_general_settings(),
+            'contactFormSettings' => isset($raw['contactFormSettings']) ? $this->sanitize_contact_form_settings($raw['contactFormSettings']) : $this->get_default_contact_form_settings(),
         ];
     }
 
@@ -372,7 +368,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'globalStyle' => $this->sanitize_style($data['globalStyle'] ?? null),
             'defaultCustomMenu' => $this->sanitize_custom_items($data['defaultCustomMenu'] ?? []),
             'defaultModalStyle' => isset($data['defaultModalStyle']) ? $this->sanitize_modal_style($data['defaultModalStyle']) : $this->get_default_modal_style(),
-            'generalSettings' => isset($data['generalSettings']) ? $this->sanitize_general_settings($data['generalSettings']) : $this->get_default_general_settings(),
+            'contactFormSettings' => isset($data['contactFormSettings']) ? $this->sanitize_contact_form_settings($data['contactFormSettings']) : $this->get_default_contact_form_settings(),
         ];
     }
 
@@ -538,23 +534,6 @@ final class Mobile_Bottom_Bar_Plugin {
             'modalAccentColor' => sanitize_hex_color($style['modalAccentColor'] ?? $defaults['modalAccentColor']) ?: $defaults['modalAccentColor'],
             'borderRadius' => max(0, min(48, (int) ($style['borderRadius'] ?? $defaults['borderRadius']))),
             'maxWidth' => max(320, min(640, (int) ($style['maxWidth'] ?? $defaults['maxWidth']))),
-        ];
-    }
-
-    private function get_default_general_settings(): array {
-        return [
-            'googleApiKey' => '',
-            'contactForm' => $this->get_default_contact_form_settings(),
-        ];
-    }
-
-    private function sanitize_general_settings($settings): array {
-        $settings = is_array($settings) ? $settings : [];
-        $defaults = $this->get_default_general_settings();
-
-        return [
-            'googleApiKey' => sanitize_text_field($settings['googleApiKey'] ?? $defaults['googleApiKey']),
-            'contactForm' => $this->sanitize_contact_form_settings($settings['contactForm'] ?? []),
         ];
     }
 
@@ -1835,8 +1814,7 @@ final class Mobile_Bottom_Bar_Plugin {
 
         // Get contact form settings
         $settings = $this->get_settings();
-        $general_settings = $settings['generalSettings'] ?? $this->get_default_general_settings();
-        $form_settings = $general_settings['contactForm'] ?? $this->get_default_contact_form_settings();
+        $form_settings = $settings['contactFormSettings'] ?? $this->get_default_contact_form_settings();
 
         // Use recipient from menu item config, fallback to fromEmail setting
         $to_email = !empty($recipient) && is_email($recipient) ? $recipient : $form_settings['fromEmail'];
