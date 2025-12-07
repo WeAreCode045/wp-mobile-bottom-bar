@@ -439,6 +439,19 @@
   border-radius: 0.75rem;
 }
 
+/* Square, scroll-free layout for iframe (map) modals */
+.wp-mbb-overlay[data-type="iframe"] .wp-mbb-modal__body {
+  max-height: none;
+  overflow: hidden;
+}
+
+.wp-mbb-overlay[data-type="iframe"] .wp-mbb-modal__iframe {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  max-height: 40vh;
+  overflow: hidden;
+}
+
 .wp-mbb-overlay-active {
   overflow: hidden;
 }
