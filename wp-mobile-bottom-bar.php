@@ -562,6 +562,12 @@ final class Mobile_Bottom_Bar_Plugin {
             'successMessage' => 'Thank you! Your message has been sent.',
             'errorMessage' => 'Sorry, there was an error sending your message. Please try again.',
             'googleApiKey' => '',
+            'smtpEnabled' => false,
+            'smtpHost' => '',
+            'smtpPort' => 587,
+            'smtpUsername' => '',
+            'smtpPassword' => '',
+            'smtpSecure' => 'tls',
         ];
     }
 
@@ -576,6 +582,12 @@ final class Mobile_Bottom_Bar_Plugin {
             'successMessage' => sanitize_text_field($settings['successMessage'] ?? $defaults['successMessage']),
             'errorMessage' => sanitize_text_field($settings['errorMessage'] ?? $defaults['errorMessage']),
             'googleApiKey' => sanitize_text_field($settings['googleApiKey'] ?? $defaults['googleApiKey']),
+            'smtpEnabled' => (bool) ($settings['smtpEnabled'] ?? $defaults['smtpEnabled']),
+            'smtpHost' => sanitize_text_field($settings['smtpHost'] ?? $defaults['smtpHost']),
+            'smtpPort' => (int) ($settings['smtpPort'] ?? $defaults['smtpPort']),
+            'smtpUsername' => sanitize_text_field($settings['smtpUsername'] ?? $defaults['smtpUsername']),
+            'smtpPassword' => sanitize_text_field($settings['smtpPassword'] ?? $defaults['smtpPassword']),
+            'smtpSecure' => sanitize_text_field($settings['smtpSecure'] ?? $defaults['smtpSecure']),
         ];
     }
 
@@ -1804,6 +1816,69 @@ final class Mobile_Bottom_Bar_Plugin {
         $this->lighthouse_templates_printed = true;
     }
 
+    private function send_email_via_smtp(string $to, string $subject, string $body, array $headers, array $smtp_settings): bool {
+        if (!$smtp_settings['smtpEnabled'] || empty($smtp_settings['smtpHost'])) {
+            return false;
+        }
+
+        // Try to use PHPMailer if available (WordPress includes it)
+        if (!class_exists('\PHPMailer\PHPMailer\PHPMailer')) {
+            // Fallback to wp_mail
+            return false;
+        }
+
+        try {
+            $mailer = new \PHPMailer\PHPMailer\PHPMailer(true);
+            
+            // SMTP configuration
+            $mailer->isSMTP();
+            $mailer->Host = $smtp_settings['smtpHost'];
+            $mailer->Port = (int) $smtp_settings['smtpPort'];
+            $mailer->SMTPAuth = !empty($smtp_settings['smtpUsername']);
+            $mailer->Username = $smtp_settings['smtpUsername'];
+            $mailer->Password = $smtp_settings['smtpPassword'];
+            
+            // Set security
+            $secure_type = $smtp_settings['smtpSecure'] ?? 'tls';
+            if ($secure_type === 'ssl') {
+                $mailer->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } elseif ($secure_type === 'tls') {
+                $mailer->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            } else {
+                $mailer->SMTPSecure = false;
+            }
+
+            // Set from email/name
+            $from_email = $smtp_settings['fromEmail'] ?? get_option('admin_email');
+            $from_name = $smtp_settings['fromName'] ?? get_bloginfo('name');
+            $mailer->setFrom($from_email, $from_name);
+
+            // Add recipient
+            $mailer->addAddress($to);
+
+            // Add reply-to from headers if present
+            foreach ($headers as $header) {
+                if (stripos($header, 'Reply-To:') === 0) {
+                    $reply_to = trim(str_ireplace('Reply-To:', '', $header));
+                    if (is_email($reply_to)) {
+                        $mailer->addReplyTo($reply_to);
+                    }
+                }
+            }
+
+            // Set subject and body
+            $mailer->Subject = $subject;
+            $mailer->Body = $body;
+            $mailer->isHTML(false);
+
+            return $mailer->send();
+        } catch (\Exception $e) {
+            // Log the error but don't expose details to user
+            error_log('SMTP Email Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     private function render_icon_markup(?string $icon): string {
         if (empty($icon) || empty(self::ICON_SVGS[$icon])) {
             return '<span class="wp-mbb__dot"></span>';
@@ -1855,7 +1930,16 @@ final class Mobile_Bottom_Bar_Plugin {
             'Reply-To: ' . $email,
         ];
 
-        $sent = wp_mail($to_email, $subject, $body, $headers);
+        // Try SMTP first if enabled, fall back to wp_mail
+        $sent = false;
+        if ($form_settings['smtpEnabled']) {
+            $sent = $this->send_email_via_smtp($to_email, $subject, $body, $headers, $form_settings);
+        }
+
+        // Fall back to wp_mail if SMTP failed or is disabled
+        if (!$sent) {
+            $sent = wp_mail($to_email, $subject, $body, $headers);
+        }
 
         if ($sent) {
             wp_send_json_success(['message' => $form_settings['successMessage']]);
