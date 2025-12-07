@@ -387,84 +387,107 @@
           return;
         }
 
-        // Check if Google Maps Directions API is available
-        if (typeof google === 'undefined' || !google.maps || !google.maps.DirectionsService) {
-          // Fallback to Google Maps URL
-          const directionsUrl = 'https://www.google.com/maps/dir/?api=1' +
-            '&origin=' + encodeURIComponent(startLocation) +
-            '&destination=' + encodeURIComponent(mapAddress) +
-            '&travelmode=driving';
-          iframe.src = directionsUrl;
+        // Get API key from config
+        const apiKey = wpMbbConfig?.googleApiKey || '';
+        if (!apiKey) {
+          alert('Google API key is not configured. Please add it in Settings > Contact form.');
           return;
         }
 
-        // Use Directions API to get route
+        // Use Directions API JSON endpoint
         routeButton.disabled = true;
         routeButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Getting Route...';
 
-        var directionsService = new google.maps.DirectionsService();
-        var request = {
-          origin: startLocation,
-          destination: mapAddress,
-          travelMode: google.maps.TravelMode.DRIVING
-        };
+        // Build the Directions API URL
+        const directionsApiUrl = 'https://maps.googleapis.com/maps/api/directions/json' +
+          '?origin=' + encodeURIComponent(startLocation) +
+          '&destination=' + encodeURIComponent(mapAddress) +
+          '&mode=driving' +
+          '&key=' + encodeURIComponent(apiKey);
 
-        directionsService.route(request, function(result, status) {
-          if (status === google.maps.DirectionsStatus.OK) {
-            // Find and replace the existing map
-            var existingMap = body.querySelector('.wp-mbb-modal__iframe, .wp-mbb-initial-map, .wp-mbb-route-map');
-            var existingRouteInfo = body.querySelector('.wp-mbb-route-info');
-            
-            if (existingMap) {
-              existingMap.remove();
-            }
-            if (existingRouteInfo) {
-              existingRouteInfo.remove();
-            }
-            
-            var mapDiv = document.createElement('div');
-            mapDiv.className = 'wp-mbb-route-map';
-            mapDiv.style.width = '100%';
-            mapDiv.style.height = '40vh';
-            mapDiv.style.aspectRatio = '1 / 1';
-            
-            // Insert map div before route container
-            body.insertBefore(mapDiv, routeContainer);
+        // Note: Direct browser fetch to Google APIs will fail due to CORS
+        // We need to proxy this through WordPress AJAX
+        var formData = new FormData();
+        formData.append('action', 'mbb_get_directions');
+        formData.append('nonce', wpMbbConfig?.nonce || '');
+        formData.append('origin', startLocation);
+        formData.append('destination', mapAddress);
 
-            var map = new google.maps.Map(mapDiv, {
-              zoom: 14,
-              center: result.routes[0].bounds.getCenter()
-            });
-
-            var directionsRenderer = new google.maps.DirectionsRenderer({
-              map: map,
-              directions: result
-            });
-
-            // Display route information
-            var route = result.routes[0];
-            var leg = route.legs[0];
-            
-            var routeInfo = document.createElement('div');
-            routeInfo.className = 'wp-mbb-route-info';
-            routeInfo.innerHTML = 
-              '<div class="wp-mbb-route-summary">' +
-                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-road"></i> <strong>Distance:</strong> ' + leg.distance.text + '</div>' +
-                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-clock"></i> <strong>Duration:</strong> ' + leg.duration.text + '</div>' +
-                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-location-dot"></i> <strong>From:</strong> ' + leg.start_address + '</div>' +
-                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-flag-checkered"></i> <strong>To:</strong> ' + leg.end_address + '</div>' +
-              '</div>';
-            
-            // Insert route info before route container
-            body.insertBefore(routeInfo, routeContainer);
-
-            routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
-            routeButton.disabled = false;
-          } else {
-            alert('Could not calculate route: ' + status);
-            routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
-            routeButton.disabled = false;
+        fetch(wpMbbConfig?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(data) {
+          if (!data.success) {
+            throw new Error(data.data?.message || 'Failed to get directions');
           }
+
+          var result = data.data.result;
+          
+          if (result.status !== 'OK' || !result.routes || result.routes.length === 0) {
+            throw new Error('No route found');
+          }
+
+          // Find and replace the existing map
+          var existingMap = body.querySelector('.wp-mbb-modal__iframe, .wp-mbb-initial-map, .wp-mbb-route-map');
+          var existingRouteInfo = body.querySelector('.wp-mbb-route-info');
+          
+          if (existingMap) {
+            existingMap.remove();
+          }
+          if (existingRouteInfo) {
+            existingRouteInfo.remove();
+          }
+
+          // Create static map with route polyline
+          var route = result.routes[0];
+          var leg = route.legs[0];
+          var polyline = route.overview_polyline.points;
+
+          var staticMapUrl = 'https://maps.googleapis.com/maps/api/staticmap' +
+            '?size=600x600' +
+            '&markers=color:green|label:A|' + encodeURIComponent(leg.start_address) +
+            '&markers=color:red|label:B|' + encodeURIComponent(leg.end_address) +
+            '&path=weight:3|color:0x0000ff|enc:' + encodeURIComponent(polyline) +
+            '&key=' + encodeURIComponent(apiKey);
+
+          var mapImg = document.createElement('img');
+          mapImg.src = staticMapUrl;
+          mapImg.className = 'wp-mbb-route-map';
+          mapImg.alt = 'Route map';
+          mapImg.style.width = '100%';
+          mapImg.style.height = 'auto';
+          mapImg.style.maxHeight = '40vh';
+          mapImg.style.objectFit = 'contain';
+
+          // Insert map image before route container
+          body.insertBefore(mapImg, routeContainer);
+
+          // Display route information
+          var routeInfo = document.createElement('div');
+          routeInfo.className = 'wp-mbb-route-info';
+          routeInfo.innerHTML = 
+            '<div class="wp-mbb-route-summary">' +
+              '<div class="wp-mbb-route-detail"><i class="fa-solid fa-road"></i> <strong>Distance:</strong> ' + leg.distance.text + '</div>' +
+              '<div class="wp-mbb-route-detail"><i class="fa-solid fa-clock"></i> <strong>Duration:</strong> ' + leg.duration.text + '</div>' +
+              '<div class="wp-mbb-route-detail"><i class="fa-solid fa-location-dot"></i> <strong>From:</strong> ' + leg.start_address + '</div>' +
+              '<div class="wp-mbb-route-detail"><i class="fa-solid fa-flag-checkered"></i> <strong>To:</strong> ' + leg.end_address + '</div>' +
+            '</div>';
+          
+          // Insert route info before route container
+          body.insertBefore(routeInfo, routeContainer);
+
+          routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
+          routeButton.disabled = false;
+        })
+        .catch(function(error) {
+          console.error('[Mobile Bottom Bar] Directions error:', error);
+          alert('Could not calculate route: ' + error.message);
+          routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
+          routeButton.disabled = false;
         });
       });
     }

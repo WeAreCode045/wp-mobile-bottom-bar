@@ -57,6 +57,8 @@ final class Mobile_Bottom_Bar_Plugin {
         add_filter('body_class', [$this, 'filter_body_class']);
         add_action('wp_ajax_mbb_contact_form', [$this, 'handle_contact_form']);
         add_action('wp_ajax_nopriv_mbb_contact_form', [$this, 'handle_contact_form']);
+        add_action('wp_ajax_mbb_get_directions', [$this, 'handle_get_directions']);
+        add_action('wp_ajax_nopriv_mbb_get_directions', [$this, 'handle_get_directions']);
     }
 
     public function register_admin_page(): void {
@@ -231,14 +233,15 @@ final class Mobile_Bottom_Bar_Plugin {
             true
         );
 
-        // Pass plugin URL and AJAX URL to frontend.js
+        // Pass plugin URL, AJAX URL, and Google API key to frontend.js
         wp_localize_script(
             'mobile-bottom-bar-frontend-js',
             'wpMbbConfig',
             [
                 'pluginUrl' => plugin_dir_url(__FILE__),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('wp_rest')
+                'nonce' => wp_create_nonce('wp_rest'),
+                'googleApiKey' => $api_key
             ]
         );
     }
@@ -1859,6 +1862,51 @@ final class Mobile_Bottom_Bar_Plugin {
         } else {
             wp_send_json_error(['message' => $form_settings['errorMessage']], 500);
         }
+    }
+
+    public function handle_get_directions(): void {
+        check_ajax_referer('wp_rest', 'nonce');
+
+        $origin = sanitize_text_field($_POST['origin'] ?? '');
+        $destination = sanitize_text_field($_POST['destination'] ?? '');
+
+        if (empty($origin) || empty($destination)) {
+            wp_send_json_error(['message' => 'Origin and destination are required.'], 400);
+        }
+
+        // Get API key from settings
+        $settings = $this->get_settings();
+        $api_key = $settings['contactFormSettings']['googleApiKey'] ?? '';
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => 'Google API key is not configured.'], 400);
+        }
+
+        // Call Google Directions API
+        $api_url = add_query_arg([
+            'origin' => $origin,
+            'destination' => $destination,
+            'mode' => 'driving',
+            'key' => $api_key
+        ], 'https://maps.googleapis.com/maps/api/directions/json');
+
+        $response = wp_remote_get($api_url, [
+            'timeout' => 15,
+            'sslverify' => true
+        ]);
+
+        if (is_wp_error($response)) {
+            wp_send_json_error(['message' => 'Failed to fetch directions: ' . $response->get_error_message()], 500);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (!$data) {
+            wp_send_json_error(['message' => 'Invalid response from Google Directions API.'], 500);
+        }
+
+        wp_send_json_success(['result' => $data]);
     }
 }
 

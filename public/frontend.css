@@ -1107,3 +1107,8 @@
   color: #991b1b;
   font-size: 0.875rem;
 }
+
+/* Google Places Autocomplete dropdown z-index fix */
+.pac-container {
+  z-index: 10001 !important;
+}
