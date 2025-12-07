@@ -233,20 +233,103 @@
     iframe.setAttribute('title', 'Embedded link preview');
     body.appendChild(iframe);
 
-    // Add Plan Route button for map iframes
+    // Add route planning UI for map iframes
     if (mapAddress) {
+      const routeContainer = document.createElement('div');
+      routeContainer.className = 'wp-mbb-route-container';
+
+      // Start location field
+      const startLocationGroup = document.createElement('div');
+      startLocationGroup.className = 'wp-mbb-route-field-group';
+
+      const startLabel = document.createElement('label');
+      startLabel.textContent = 'Starting Location:';
+      startLabel.className = 'wp-mbb-route-label';
+      startLocationGroup.appendChild(startLabel);
+
+      const startInputWrapper = document.createElement('div');
+      startInputWrapper.className = 'wp-mbb-route-input-wrapper';
+
+      const startInput = document.createElement('input');
+      startInput.type = 'text';
+      startInput.placeholder = 'Enter your starting address';
+      startInput.className = 'wp-mbb-route-input';
+      startInput.id = 'wp-mbb-start-location';
+      startInputWrapper.appendChild(startInput);
+
+      const currentLocationBtn = document.createElement('button');
+      currentLocationBtn.type = 'button';
+      currentLocationBtn.className = 'wp-mbb-current-location-btn';
+      currentLocationBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+      currentLocationBtn.title = 'Use current location';
+      startInputWrapper.appendChild(currentLocationBtn);
+
+      startLocationGroup.appendChild(startInputWrapper);
+      routeContainer.appendChild(startLocationGroup);
+
+      // Route button container
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'wp-mbb-map-actions';
       
-      const routeButton = document.createElement('a');
-      routeButton.href = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(mapAddress);
-      routeButton.target = '_blank';
-      routeButton.rel = 'noopener noreferrer';
+      const routeButton = document.createElement('button');
+      routeButton.type = 'button';
       routeButton.className = 'wp-mbb-route-button';
-      routeButton.innerHTML = '📍 Plan Route to this Location';
+      routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
+      routeButton.disabled = true;
       
       buttonContainer.appendChild(routeButton);
-      body.appendChild(buttonContainer);
+      routeContainer.appendChild(buttonContainer);
+
+      body.appendChild(routeContainer);
+
+      // Enable route button when start location is entered
+      startInput.addEventListener('input', function() {
+        routeButton.disabled = !this.value.trim();
+      });
+
+      // Handle current location button
+      currentLocationBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+          alert('Geolocation is not supported by your browser');
+          return;
+        }
+
+        currentLocationBtn.disabled = true;
+        currentLocationBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            startInput.value = lat + ',' + lng;
+            routeButton.disabled = false;
+            currentLocationBtn.disabled = false;
+            currentLocationBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+          },
+          function(error) {
+            alert('Unable to get your location: ' + error.message);
+            currentLocationBtn.disabled = false;
+            currentLocationBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+          }
+        );
+      });
+
+      // Handle route button click
+      routeButton.addEventListener('click', function() {
+        const startLocation = startInput.value.trim();
+        if (!startLocation) {
+          return;
+        }
+
+        // Build Google Maps Directions URL with Routes API
+        const directionsUrl = 'https://www.google.com/maps/dir/?api=1' +
+          '&origin=' + encodeURIComponent(startLocation) +
+          '&destination=' + encodeURIComponent(mapAddress) +
+          '&travelmode=driving';
+
+        // Update iframe to show route
+        iframe.src = directionsUrl;
+      });
     }
   }
 
