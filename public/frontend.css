@@ -536,6 +536,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 1.5rem;
+  overflow-y: auto;
 }
 
 #wp-mbb-multi-hotel-modal.is-visible {
@@ -587,6 +588,7 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: #0f172a;
+  font-family: Verdana, sans-serif;
 }
 
 .wp-mbb-modal-body {
@@ -607,6 +609,7 @@
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
   color: #334155;
+  font-family: Verdana, sans-serif;
 }
 
 .wp-mbb-hotel-selector__select {
@@ -615,7 +618,7 @@
   border: 1px solid #cbd5e0;
   border-radius: 0.5rem;
   font-size: 1rem;
-  color: #1e293b;
+  color: #000000;
   background: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -631,12 +634,28 @@
   box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.1);
 }
 
+/* Dropdown option styling */
+.wp-mbb-hotel-selector__select option {
+  background: #ffffff;
+  color: #000000;
+  padding: 0.5rem;
+}
+
+.wp-mbb-hotel-selector__select option:hover {
+  background: #e5e7eb;
+  color: #fb304b;
+}
+
 .wp-mbb-hotel-selector__dates {
   position: relative;
+  margin: -1.75rem -1.75rem 0 -1.75rem;
 }
 
 .wp-mbb-hotel-selector__calendar {
-  margin-top: 0.5rem;
+  margin-top: 0;
+  padding: 1.75rem;
+  background: #ffffff;
+  width: 100%;
 }
 
 .wp-mbb-hotel-selector__range-input {
@@ -727,6 +746,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 1.5rem;
+  text-align: center;
 }
 
 .wp-mbb-hotel-selector__cta:hover {
