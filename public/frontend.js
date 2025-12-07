@@ -226,12 +226,52 @@
       return;
     }
 
-    const iframe = document.createElement('iframe');
-    iframe.className = 'wp-mbb-modal__iframe';
-    iframe.src = url;
-    iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('title', 'Embedded link preview');
-    body.appendChild(iframe);
+    // For maps, use Google Maps API instead of iframe
+    if (mapAddress && typeof google !== 'undefined' && google.maps) {
+      const mapDiv = document.createElement('div');
+      mapDiv.className = 'wp-mbb-modal__iframe wp-mbb-initial-map';
+      mapDiv.style.width = '100%';
+      mapDiv.style.height = '40vh';
+      mapDiv.style.aspectRatio = '1 / 1';
+      body.appendChild(mapDiv);
+
+      // Geocode the address to get coordinates
+      var geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: mapAddress }, function(results, status) {
+        if (status === google.maps.GeocoderStatus.OK && results[0]) {
+          var location = results[0].geometry.location;
+          var map = new google.maps.Map(mapDiv, {
+            zoom: 15,
+            center: location
+          });
+          
+          // Add a marker for the destination
+          new google.maps.Marker({
+            position: location,
+            map: map,
+            title: mapAddress
+          });
+        } else {
+          console.warn('Geocoding failed:', status);
+          // Fallback to iframe embed
+          mapDiv.remove();
+          const iframe = document.createElement('iframe');
+          iframe.className = 'wp-mbb-modal__iframe';
+          iframe.src = url;
+          iframe.setAttribute('loading', 'lazy');
+          iframe.setAttribute('title', 'Embedded link preview');
+          body.appendChild(iframe);
+        }
+      });
+    } else {
+      // Non-map iframe or Google Maps API not available
+      const iframe = document.createElement('iframe');
+      iframe.className = 'wp-mbb-modal__iframe';
+      iframe.src = url;
+      iframe.setAttribute('loading', 'lazy');
+      iframe.setAttribute('title', 'Embedded link preview');
+      body.appendChild(iframe);
+    }
 
     // Add route planning UI for map iframes
     if (mapAddress) {
@@ -365,8 +405,16 @@
 
         directionsService.route(request, function(result, status) {
           if (status === google.maps.DirectionsStatus.OK) {
-            // Create a map to display the route
-            iframe.style.display = 'none';
+            // Find and replace the existing map
+            var existingMap = body.querySelector('.wp-mbb-modal__iframe, .wp-mbb-initial-map, .wp-mbb-route-map');
+            var existingRouteInfo = body.querySelector('.wp-mbb-route-info');
+            
+            if (existingMap) {
+              existingMap.remove();
+            }
+            if (existingRouteInfo) {
+              existingRouteInfo.remove();
+            }
             
             var mapDiv = document.createElement('div');
             mapDiv.className = 'wp-mbb-route-map';
@@ -374,8 +422,8 @@
             mapDiv.style.height = '40vh';
             mapDiv.style.aspectRatio = '1 / 1';
             
-            // Insert map div after iframe
-            iframe.parentNode.insertBefore(mapDiv, iframe.nextSibling);
+            // Insert map div before route container
+            body.insertBefore(mapDiv, routeContainer);
 
             var map = new google.maps.Map(mapDiv, {
               zoom: 14,
@@ -401,7 +449,8 @@
                 '<div class="wp-mbb-route-detail"><i class="fa-solid fa-flag-checkered"></i> <strong>To:</strong> ' + leg.end_address + '</div>' +
               '</div>';
             
-            routeContainer.appendChild(routeInfo);
+            // Insert route info before route container
+            body.insertBefore(routeInfo, routeContainer);
 
             routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
             routeButton.disabled = false;
