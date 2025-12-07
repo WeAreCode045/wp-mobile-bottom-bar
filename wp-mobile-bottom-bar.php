@@ -133,7 +133,7 @@ final class Mobile_Bottom_Bar_Plugin {
 		);
 
 
-        // Enqueue Google Maps Places API for address autocomplete
+        // Enqueue Google Maps Places API for address autocomplete (async, doesn't block React)
         $settings = $this->get_settings();
         $general_settings = $settings['generalSettings'] ?? $this->get_default_general_settings();
         $api_key = $general_settings['googleApiKey'] ?? '';
@@ -143,7 +143,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'https://maps.googleapis.com/maps/api/js?key=' . urlencode($api_key) . '&libraries=places',
             [],
             null,
-            false
+            true
         );
 
         $entry = $this->get_manifest_entry();
@@ -158,7 +158,7 @@ final class Mobile_Bottom_Bar_Plugin {
         wp_enqueue_script(
             self::SCRIPT_HANDLE,
             $asset_base . $entry['file'],
-            ['google-maps-places'],
+            [],
             self::VERSION,
             true
         );
