@@ -1116,7 +1116,7 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $is_calendar = !empty($item['type']) && in_array($item['type'], ['mylighthouse', 'mylighthouse-multi'], true);
-        $book_label_markup = $is_calendar ? '<span class="wp-mbb__book-label"><span class="wp-mbb__book-arrow">↑</span>BOOK</span>' : '';
+        $book_label_markup = $is_calendar ? '<span class="wp-mbb__book-label"><span class="wp-mbb__book-chevron">^</span>BOOK</span>' : '';
 
         return '<a class="' . esc_attr(implode(' ', $item_classes)) . '" href="' . esc_url($item['href'] ?? '#') . '"' . $target . $rel . $data_attributes . '>'
             . '<span class="wp-mbb__icon" aria-hidden="true">' . $this->render_icon_markup($item['icon'] ?? null) . '</span>'

@@ -236,16 +236,18 @@
   flex-direction: column;
   align-items: center;
   gap: 0.125rem;
-  font-size: 0.625rem;
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--wp-mbb-text-color, #6b7280);
   pointer-events: none;
 }
 
-#wp-mobile-bottom-bar .wp-mbb__book-arrow {
-  font-size: 0.75rem;
+#wp-mobile-bottom-bar .wp-mbb__book-chevron {
+  font-size: 12px;
   line-height: 1;
+  font-weight: 700;
 }
 
 #wp-mobile-bottom-bar .wp-mbb__item.is-active .wp-mbb__icon {
