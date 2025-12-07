@@ -55,6 +55,8 @@ final class Mobile_Bottom_Bar_Plugin {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
         add_action('wp_footer', [$this, 'render_frontend_bar']);
         add_filter('body_class', [$this, 'filter_body_class']);
+        add_action('wp_ajax_mbb_contact_form', [$this, 'handle_contact_form']);
+        add_action('wp_ajax_nopriv_mbb_contact_form', [$this, 'handle_contact_form']);
     }
 
     public function register_admin_page(): void {
@@ -131,6 +133,15 @@ final class Mobile_Bottom_Bar_Plugin {
 		);
 
 
+        // Enqueue Google Maps Places API for address autocomplete
+        wp_enqueue_script(
+            'google-maps-places',
+            'https://maps.googleapis.com/maps/api/js?key=&libraries=places',
+            [],
+            null,
+            false
+        );
+
         $entry = $this->get_manifest_entry();
         $asset_base = plugin_dir_url(__FILE__) . 'build/';
 
@@ -143,7 +154,7 @@ final class Mobile_Bottom_Bar_Plugin {
         wp_enqueue_script(
             self::SCRIPT_HANDLE,
             $asset_base . $entry['file'],
-            [],
+            ['google-maps-places'],
             self::VERSION,
             true
         );
@@ -206,12 +217,14 @@ final class Mobile_Bottom_Bar_Plugin {
             true
         );
 
-        // Pass plugin URL to frontend.js for loading vendor assets
+        // Pass plugin URL and AJAX URL to frontend.js
         wp_localize_script(
             'mobile-bottom-bar-frontend-js',
             'wpMbbConfig',
             [
-                'pluginUrl' => plugin_dir_url(__FILE__)
+                'pluginUrl' => plugin_dir_url(__FILE__),
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('wp_rest')
             ]
         );
     }
@@ -345,6 +358,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'globalStyle' => $this->sanitize_style($raw['globalStyle'] ?? null),
             'defaultCustomMenu' => $this->sanitize_custom_items($raw['defaultCustomMenu'] ?? []),
             'defaultModalStyle' => isset($raw['defaultModalStyle']) ? $this->sanitize_modal_style($raw['defaultModalStyle']) : $this->get_default_modal_style(),
+            'contactFormSettings' => isset($raw['contactFormSettings']) ? $this->sanitize_contact_form_settings($raw['contactFormSettings']) : $this->get_default_contact_form_settings(),
         ];
     }
 
@@ -354,6 +368,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'globalStyle' => $this->sanitize_style($data['globalStyle'] ?? null),
             'defaultCustomMenu' => $this->sanitize_custom_items($data['defaultCustomMenu'] ?? []),
             'defaultModalStyle' => isset($data['defaultModalStyle']) ? $this->sanitize_modal_style($data['defaultModalStyle']) : $this->get_default_modal_style(),
+            'contactFormSettings' => isset($data['contactFormSettings']) ? $this->sanitize_contact_form_settings($data['contactFormSettings']) : $this->get_default_contact_form_settings(),
         ];
     }
 
@@ -519,6 +534,29 @@ final class Mobile_Bottom_Bar_Plugin {
             'modalAccentColor' => sanitize_hex_color($style['modalAccentColor'] ?? $defaults['modalAccentColor']) ?: $defaults['modalAccentColor'],
             'borderRadius' => max(0, min(48, (int) ($style['borderRadius'] ?? $defaults['borderRadius']))),
             'maxWidth' => max(320, min(640, (int) ($style['maxWidth'] ?? $defaults['maxWidth']))),
+        ];
+    }
+
+    private function get_default_contact_form_settings(): array {
+        return [
+            'fromEmail' => get_option('admin_email'),
+            'fromName' => get_bloginfo('name'),
+            'subject' => 'New Contact Form Submission from {name}',
+            'successMessage' => 'Thank you! Your message has been sent.',
+            'errorMessage' => 'Sorry, there was an error sending your message. Please try again.',
+        ];
+    }
+
+    private function sanitize_contact_form_settings($settings): array {
+        $settings = is_array($settings) ? $settings : [];
+        $defaults = $this->get_default_contact_form_settings();
+
+        return [
+            'fromEmail' => sanitize_email($settings['fromEmail'] ?? $defaults['fromEmail']) ?: $defaults['fromEmail'],
+            'fromName' => sanitize_text_field($settings['fromName'] ?? $defaults['fromName']),
+            'subject' => sanitize_text_field($settings['subject'] ?? $defaults['subject']),
+            'successMessage' => sanitize_text_field($settings['successMessage'] ?? $defaults['successMessage']),
+            'errorMessage' => sanitize_text_field($settings['errorMessage'] ?? $defaults['errorMessage']),
         ];
     }
 
@@ -920,6 +958,35 @@ final class Mobile_Bottom_Bar_Plugin {
             $this->render_lighthouse_form($bar);
             $this->render_multi_hotel_modal_template();
         }
+
+        // Render contact form modal if any mail-type item exists
+        if ($this->has_mail_item($items)) {
+            $this->render_contact_form_modal();
+        }
+    }
+
+    private function has_mail_item(array $items): bool {
+        foreach ($items as $item) {
+            if (isset($item['type']) && $item['type'] === 'mail') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function render_contact_form_modal(): void {
+        static $rendered = false;
+        
+        if ($rendered) {
+            return;
+        }
+        
+        $template_path = plugin_dir_path(__FILE__) . 'templates/contact-form-modal.php';
+        
+        if (file_exists($template_path)) {
+            include $template_path;
+            $rendered = true;
+        }
     }
 
     private function render_multi_hotel_modal_template(): void {
@@ -1048,9 +1115,13 @@ final class Mobile_Bottom_Bar_Plugin {
             $label_markup .= '<span class="wp-mbb__label wp-mbb__label--slideout">' . $label_text . '</span>';
         }
 
+        $is_calendar = !empty($item['type']) && in_array($item['type'], ['mylighthouse', 'mylighthouse-multi'], true);
+        $book_label_markup = $is_calendar ? '<span class="wp-mbb__book-label"><span class="wp-mbb__book-arrow">↑</span>BOOK</span>' : '';
+
         return '<a class="' . esc_attr(implode(' ', $item_classes)) . '" href="' . esc_url($item['href'] ?? '#') . '"' . $target . $rel . $data_attributes . '>'
             . '<span class="wp-mbb__icon" aria-hidden="true">' . $this->render_icon_markup($item['icon'] ?? null) . '</span>'
             . $label_markup
+            . $book_label_markup
             . '</a>';
     }
 
@@ -1722,6 +1793,56 @@ final class Mobile_Bottom_Bar_Plugin {
         return '<svg class="wp-mbb__svg" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">'
             . self::ICON_SVGS[$icon]
             . '</svg>';
+    }
+
+    public function handle_contact_form(): void {
+        check_ajax_referer('wp_rest', 'nonce');
+
+        $name = sanitize_text_field($_POST['name'] ?? '');
+        $email = sanitize_email($_POST['email'] ?? '');
+        $phone = sanitize_text_field($_POST['phone'] ?? '');
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $recipient = sanitize_email($_POST['recipient'] ?? '');
+
+        if (empty($name) || empty($email) || empty($message)) {
+            wp_send_json_error(['message' => 'Please fill in all required fields.'], 400);
+        }
+
+        if (!is_email($email)) {
+            wp_send_json_error(['message' => 'Please enter a valid email address.'], 400);
+        }
+
+        // Get contact form settings
+        $settings = $this->get_settings();
+        $form_settings = $settings['contactFormSettings'] ?? $this->get_default_contact_form_settings();
+
+        // Use recipient from menu item config, fallback to fromEmail setting
+        $to_email = !empty($recipient) && is_email($recipient) ? $recipient : $form_settings['fromEmail'];
+        
+        // Replace placeholders in subject
+        $subject = str_replace('{name}', $name, $form_settings['subject']);
+        $subject = '[' . get_bloginfo('name') . '] ' . $subject;
+
+        $body = sprintf(
+            "Name: %s\nEmail: %s\nPhone: %s\n\nMessage:\n%s",
+            $name,
+            $email,
+            $phone ?: 'Not provided',
+            $message
+        );
+
+        $headers = [
+            'From: ' . $form_settings['fromName'] . ' <' . $form_settings['fromEmail'] . '>',
+            'Reply-To: ' . $email,
+        ];
+
+        $sent = wp_mail($to_email, $subject, $body, $headers);
+
+        if ($sent) {
+            wp_send_json_success(['message' => $form_settings['successMessage']]);
+        } else {
+            wp_send_json_error(['message' => $form_settings['errorMessage']], 500);
+        }
     }
 }
 

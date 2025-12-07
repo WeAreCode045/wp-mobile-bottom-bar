@@ -208,7 +208,7 @@
     if (safeType === 'wysiwyg') {
       body.innerHTML = payload.wysiwygContent || '<p>No content available.</p>';
     } else if (safeType === 'iframe') {
-      renderIframe(body, payload.href);
+      renderIframe(body, payload.href, payload.mapAddress);
     } else {
       body.innerHTML = payload.modalContent || '<p>No additional content provided.</p>';
     }
@@ -218,7 +218,7 @@
     });
   }
 
-  function renderIframe(body, url) {
+  function renderIframe(body, url, mapAddress) {
     body.innerHTML = '';
 
     if (!url) {
@@ -232,6 +232,22 @@
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('title', 'Embedded link preview');
     body.appendChild(iframe);
+
+    // Add Plan Route button for map iframes
+    if (mapAddress) {
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'wp-mbb-map-actions';
+      
+      const routeButton = document.createElement('a');
+      routeButton.href = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(mapAddress);
+      routeButton.target = '_blank';
+      routeButton.rel = 'noopener noreferrer';
+      routeButton.className = 'wp-mbb-route-button';
+      routeButton.innerHTML = '📍 Plan Route to this Location';
+      
+      buttonContainer.appendChild(routeButton);
+      body.appendChild(buttonContainer);
+    }
   }
 
   function closeOverlay(overlayRefs, lastTrigger) {
@@ -381,6 +397,14 @@
         return;
       }
 
+      if (type === 'mail') {
+        event.preventDefault();
+        const payload = parsePayload(target.dataset.payload);
+        const recipientEmail = payload.emailAddress || '';
+        openContactFormModal(recipientEmail);
+        return;
+      }
+
       if (type === 'map') {
         event.preventDefault();
         const payload = parsePayload(target.dataset.payload);
@@ -392,11 +416,9 @@
         }
 
         const mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(address) + '&output=embed';
-        const label = target.querySelector('.wp-mbb__label');
-        const fallbackTitle = payload.modalTitle || (label ? label.textContent : target.textContent || 'Map');
 
         lastTrigger = target;
-        openOverlay(overlayRefs, 'iframe', { href: mapUrl, modalTitle: fallbackTitle }, fallbackTitle);
+        openOverlay(overlayRefs, 'iframe', { href: mapUrl, modalTitle: '', mapAddress: address }, '');
         return;
       }
 
@@ -426,6 +448,133 @@
 
         lastTrigger = target;
         openOverlay(overlayRefs, 'iframe', mergedPayload, fallbackTitle);
+      }
+    });
+
+    // Contact form modal handling
+    function openContactFormModal(recipientEmail) {
+      const modal = document.getElementById('wp-mbb-contact-form-modal');
+      if (!modal) return;
+
+      // Store recipient email in form data attribute
+      const form = modal.querySelector('#wp-mbb-contact-form');
+      if (form && recipientEmail) {
+        form.setAttribute('data-recipient', recipientEmail);
+      }
+
+      modal.setAttribute('aria-hidden', 'false');
+      modal.style.display = 'block';
+      modal.classList.add('is-visible');
+      document.body.classList.add('wp-mbb-overlay-active');
+
+      const firstInput = modal.querySelector('input');
+      if (firstInput) {
+        window.requestAnimationFrame(() => firstInput.focus());
+      }
+    }
+
+    function closeContactFormModal() {
+      const modal = document.getElementById('wp-mbb-contact-form-modal');
+      if (!modal) return;
+
+      modal.classList.remove('is-visible');
+      modal.setAttribute('aria-hidden', 'true');
+      modal.style.display = 'none';
+      document.body.classList.remove('wp-mbb-overlay-active');
+
+      const form = modal.querySelector('#wp-mbb-contact-form');
+      if (form) {
+        form.reset();
+      }
+
+      const feedback = modal.querySelector('.wp-mbb-form-feedback');
+      if (feedback) {
+        feedback.style.display = 'none';
+        feedback.textContent = '';
+        feedback.className = 'wp-mbb-form-feedback';
+      }
+    }
+
+    const contactModal = document.getElementById('wp-mbb-contact-form-modal');
+    if (contactModal) {
+      const closeBtn = contactModal.querySelector('.wp-mbb-modal-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeContactFormModal);
+      }
+
+      contactModal.addEventListener('click', function (event) {
+        if (event.target === contactModal) {
+          closeContactFormModal();
+        }
+      });
+
+      const form = contactModal.querySelector('#wp-mbb-contact-form');
+      if (form) {
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+
+          const submitBtn = form.querySelector('.wp-mbb-form-submit');
+          const feedback = form.querySelector('.wp-mbb-form-feedback');
+          const formData = new FormData(form);
+
+          formData.append('action', 'mbb_contact_form');
+          formData.append('nonce', wpMbbConfig?.nonce || '');
+          
+          // Add recipient email from data attribute
+          const recipient = form.getAttribute('data-recipient');
+          if (recipient) {
+            formData.append('recipient', recipient);
+          }
+
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+          }
+
+          if (feedback) {
+            feedback.style.display = 'none';
+            feedback.textContent = '';
+            feedback.className = 'wp-mbb-form-feedback';
+          }
+
+          fetch(wpMbbConfig?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+            method: 'POST',
+            body: formData
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (feedback) {
+                feedback.style.display = 'block';
+                feedback.textContent = data.data?.message || 'An error occurred.';
+                feedback.classList.add(data.success ? 'wp-mbb-form-feedback--success' : 'wp-mbb-form-feedback--error');
+              }
+
+              if (data.success) {
+                form.reset();
+                setTimeout(() => closeContactFormModal(), 2000);
+              }
+            })
+            .catch(error => {
+              console.error('[Mobile Bottom Bar] Contact form error:', error);
+              if (feedback) {
+                feedback.style.display = 'block';
+                feedback.textContent = 'Network error. Please try again.';
+                feedback.classList.add('wp-mbb-form-feedback--error');
+              }
+            })
+            .finally(() => {
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message';
+              }
+            });
+        });
+      }
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && contactModal && contactModal.classList.contains('is-visible')) {
+        closeContactFormModal();
       }
     });
   });

@@ -227,6 +227,27 @@
   color: #fff;
 }
 
+#wp-mobile-bottom-bar .wp-mbb__book-label {
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--wp-mbb-text-color, #6b7280);
+  pointer-events: none;
+}
+
+#wp-mobile-bottom-bar .wp-mbb__book-arrow {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
 #wp-mobile-bottom-bar .wp-mbb__item.is-active .wp-mbb__icon {
   background: var(--wp-mbb-accent, #fb304b);
   color: #fff;
@@ -452,8 +473,123 @@
   overflow: hidden;
 }
 
+.wp-mbb-map-actions {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.wp-mbb-route-button {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #6366f1;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.wp-mbb-route-button:hover {
+  background: #4f46e5;
+}
+
 .wp-mbb-overlay-active {
   overflow: hidden;
+}
+
+/* Contact Form Modal Styles */
+.wp-mbb-overlay--contact {
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 10001;
+}
+
+.wp-mbb-modal--contact {
+  max-width: 420px;
+}
+
+.wp-mbb-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wp-mbb-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.wp-mbb-form-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.wp-mbb-required {
+  color: #ef4444;
+}
+
+.wp-mbb-form-field input,
+.wp-mbb-form-field textarea {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.wp-mbb-form-field input:focus,
+.wp-mbb-form-field textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.wp-mbb-form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.wp-mbb-form-submit {
+  padding: 0.75rem 1.5rem;
+  background: #6366f1;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.wp-mbb-form-submit:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.wp-mbb-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wp-mbb-form-feedback {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.wp-mbb-form-feedback--success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.wp-mbb-form-feedback--error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
 }
 
 @media (max-width: 767px) {
