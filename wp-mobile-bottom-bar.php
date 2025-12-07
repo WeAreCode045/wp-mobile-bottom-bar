@@ -693,7 +693,7 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $allowed_icons = array_keys(self::ICON_SVGS);
-        $allowed_types = ['link', 'phone', 'mail', 'modal', 'wysiwyg'];
+        $allowed_types = ['link', 'phone', 'mail', 'modal', 'wysiwyg', 'map'];
         $sanitized = [];
 
         foreach ($items as $item) {
@@ -715,6 +715,7 @@ final class Mobile_Bottom_Bar_Plugin {
                 'modalContent' => '',
                 'wysiwygContent' => '',
                 'linkTarget' => 'self',
+                'mapAddress' => '',
             ];
 
             switch ($type) {
@@ -731,6 +732,9 @@ final class Mobile_Bottom_Bar_Plugin {
                     break;
                 case 'wysiwyg':
                     $sanitized_item['wysiwygContent'] = $this->sanitize_rich_content($item['wysiwygContent'] ?? '');
+                    break;
+                case 'map':
+                    $sanitized_item['mapAddress'] = sanitize_text_field($item['mapAddress'] ?? '');
                     break;
                 case 'link':
                 default:
@@ -1267,7 +1271,7 @@ final class Mobile_Bottom_Bar_Plugin {
     }
 
     private function normalize_custom_item_type($type): string {
-        $allowed = ['link', 'phone', 'mail', 'modal', 'wysiwyg'];
+        $allowed = ['link', 'phone', 'mail', 'modal', 'wysiwyg', 'map'];
 
         return in_array($type, $allowed, true) ? $type : 'link';
     }
@@ -1287,6 +1291,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'modalTitle' => $item['modalTitle'] ?? '',
             'modalContent' => $item['modalContent'] ?? '',
             'wysiwygContent' => $item['wysiwygContent'] ?? '',
+            'mapAddress' => $item['mapAddress'] ?? '',
             'linkTarget' => $this->normalize_link_target($item['linkTarget'] ?? 'self'),
         ];
     }
@@ -1303,6 +1308,7 @@ final class Mobile_Bottom_Bar_Plugin {
                 return $email ? 'mailto:' . $email : '#';
             case 'modal':
             case 'wysiwyg':
+            case 'map':
                 return '#';
             case 'link':
             default:

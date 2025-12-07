@@ -145,6 +145,17 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
         return `${y}-${m}-${d}`;
     }
 
+    // Helper: format date string as DD-MM-YYYY for summary display
+    function formatDateDDMMYYYY(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const [y, m, d] = parts;
+            return `${d}-${m}-${y}`;
+        }
+        return dateStr;
+    }
+
     const modal = document.getElementById('wp-mbb-multi-hotel-modal');
     const triggerInput = document.getElementById('wp-mbb-date-display');
     const calendarContainer = modal.querySelector('.wp-mbb-hotel-selector__calendar');
@@ -189,8 +200,8 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
         // Show summary only if all three values are selected
         if (selectedHotel && arrival && departure) {
             summaryHotel.textContent = selectedHotelText;
-            summaryArrival.textContent = arrival;
-            summaryDeparture.textContent = departure;
+            summaryArrival.textContent = formatDateDDMMYYYY(arrival);
+            summaryDeparture.textContent = formatDateDDMMYYYY(departure);
             summaryContainer.style.display = 'block';
         } else {
             summaryContainer.style.display = 'none';

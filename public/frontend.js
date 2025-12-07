@@ -367,7 +367,36 @@
         event.stopPropagation();
         console.log('[Mobile Bottom Bar] Single hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
-        triggerLighthouseCalendar(payload);
+        const hotels = Array.isArray(payload.hotels) ? payload.hotels : [];
+
+        // If only one hotel is configured, use the new inline modal (no dropdown)
+        if (hotels.length === 1 && typeof window.wpMbbOpenSingleHotelModal === 'function') {
+          const hotelName = hotels[0].name || hotels[0].id || '';
+          console.log('[Mobile Bottom Bar] Opening single-hotel modal for', hotelName);
+          window.wpMbbOpenSingleHotelModal(hotelName);
+        } else {
+          // Fallback to legacy mylighthouse modal
+          triggerLighthouseCalendar(payload);
+        }
+        return;
+      }
+
+      if (type === 'map') {
+        event.preventDefault();
+        const payload = parsePayload(target.dataset.payload);
+        const address = payload.mapAddress || '';
+
+        if (!address) {
+          console.warn('[Mobile Bottom Bar] Map address missing in payload');
+          return;
+        }
+
+        const mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(address) + '&output=embed';
+        const label = target.querySelector('.wp-mbb__label');
+        const fallbackTitle = payload.modalTitle || (label ? label.textContent : target.textContent || 'Map');
+
+        lastTrigger = target;
+        openOverlay(overlayRefs, 'iframe', { href: mapUrl, modalTitle: fallbackTitle }, fallbackTitle);
         return;
       }
 
