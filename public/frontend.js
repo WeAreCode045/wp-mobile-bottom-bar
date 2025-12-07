@@ -267,6 +267,26 @@
       startLocationGroup.appendChild(startInputWrapper);
       routeContainer.appendChild(startLocationGroup);
 
+      // Initialize Google Places Autocomplete on start location input
+      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        try {
+          var autocomplete = new google.maps.places.Autocomplete(startInput, {
+            types: ['geocode', 'establishment'],
+            fields: ['formatted_address', 'geometry', 'name']
+          });
+
+          autocomplete.addListener('place_changed', function() {
+            var place = autocomplete.getPlace();
+            if (place.formatted_address) {
+              startInput.value = place.formatted_address;
+              routeButton.disabled = false;
+            }
+          });
+        } catch (e) {
+          console.warn('Google Places Autocomplete initialization failed:', e);
+        }
+      }
+
       // Route button container
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'wp-mbb-map-actions';
@@ -321,14 +341,76 @@
           return;
         }
 
-        // Build Google Maps Directions URL with Routes API
-        const directionsUrl = 'https://www.google.com/maps/dir/?api=1' +
-          '&origin=' + encodeURIComponent(startLocation) +
-          '&destination=' + encodeURIComponent(mapAddress) +
-          '&travelmode=driving';
+        // Check if Google Maps Directions API is available
+        if (typeof google === 'undefined' || !google.maps || !google.maps.DirectionsService) {
+          // Fallback to Google Maps URL
+          const directionsUrl = 'https://www.google.com/maps/dir/?api=1' +
+            '&origin=' + encodeURIComponent(startLocation) +
+            '&destination=' + encodeURIComponent(mapAddress) +
+            '&travelmode=driving';
+          iframe.src = directionsUrl;
+          return;
+        }
 
-        // Update iframe to show route
-        iframe.src = directionsUrl;
+        // Use Directions API to get route
+        routeButton.disabled = true;
+        routeButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Getting Route...';
+
+        var directionsService = new google.maps.DirectionsService();
+        var request = {
+          origin: startLocation,
+          destination: mapAddress,
+          travelMode: google.maps.TravelMode.DRIVING
+        };
+
+        directionsService.route(request, function(result, status) {
+          if (status === google.maps.DirectionsStatus.OK) {
+            // Create a map to display the route
+            iframe.style.display = 'none';
+            
+            var mapDiv = document.createElement('div');
+            mapDiv.className = 'wp-mbb-route-map';
+            mapDiv.style.width = '100%';
+            mapDiv.style.height = '40vh';
+            mapDiv.style.aspectRatio = '1 / 1';
+            
+            // Insert map div after iframe
+            iframe.parentNode.insertBefore(mapDiv, iframe.nextSibling);
+
+            var map = new google.maps.Map(mapDiv, {
+              zoom: 14,
+              center: result.routes[0].bounds.getCenter()
+            });
+
+            var directionsRenderer = new google.maps.DirectionsRenderer({
+              map: map,
+              directions: result
+            });
+
+            // Display route information
+            var route = result.routes[0];
+            var leg = route.legs[0];
+            
+            var routeInfo = document.createElement('div');
+            routeInfo.className = 'wp-mbb-route-info';
+            routeInfo.innerHTML = 
+              '<div class="wp-mbb-route-summary">' +
+                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-road"></i> <strong>Distance:</strong> ' + leg.distance.text + '</div>' +
+                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-clock"></i> <strong>Duration:</strong> ' + leg.duration.text + '</div>' +
+                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-location-dot"></i> <strong>From:</strong> ' + leg.start_address + '</div>' +
+                '<div class="wp-mbb-route-detail"><i class="fa-solid fa-flag-checkered"></i> <strong>To:</strong> ' + leg.end_address + '</div>' +
+              '</div>';
+            
+            routeContainer.appendChild(routeInfo);
+
+            routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
+            routeButton.disabled = false;
+          } else {
+            alert('Could not calculate route: ' + status);
+            routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
+            routeButton.disabled = false;
+          }
+        });
       });
     }
   }

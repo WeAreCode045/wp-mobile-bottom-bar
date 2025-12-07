@@ -573,6 +573,48 @@
   font-size: 10px;
 }
 
+.wp-mbb-route-map {
+  margin-top: 1rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mbb-route-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.wp-mbb-route-summary {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.wp-mbb-route-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.wp-mbb-route-detail i {
+  color: #6366f1;
+  font-size: 0.875rem;
+  width: 1rem;
+  text-align: center;
+}
+
+.wp-mbb-route-detail strong {
+  color: #1f2937;
+  font-weight: 600;
+  min-width: 4.5rem;
+}
+
 .wp-mbb-overlay-active {
   overflow: hidden;
 }
