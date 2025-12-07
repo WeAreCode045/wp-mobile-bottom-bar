@@ -582,6 +582,7 @@
 .wp-mbb-modal-header {
   padding: 1.25rem 1.75rem 0.75rem;
   border-bottom: 1px solid #e2e8f0;
+  text-align: center;
 }
 
 .wp-mbb-modal-title {
@@ -655,7 +656,7 @@
 }
 
 .wp-mbb-hotel-selector__calendar {
-  margin-top: 0;
+  margin-top: 15px;
   padding: 1.25rem;
   background: #ffffff;
   width: auto;
