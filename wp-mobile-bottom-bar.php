@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Mobby - Mobile Bottom Bar
  * Description:       Build your own dynamic mobile bottom navigation bar from the WordPress dashboard.
- * Version:           2.3.1
+ * Version:           2.3.3
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Code045
