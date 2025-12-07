@@ -88,13 +88,31 @@ wp_enqueue_script(
 				<!-- Date Selection -->
 				<div class="wp-mbb-hotel-selector__field">
 					<label class="wp-mbb-hotel-selector__label">
-						<?php esc_html_e('Select Dates', 'mobile-bottom-bar'); ?>
+						<?php esc_html_e('Arrival and Departure Date', 'mobile-bottom-bar'); ?>
 					</label>
 					<div class="wp-mbb-hotel-selector__dates">
 						<input type="text" id="wp-mbb-date-display" class="wp-mbb-hotel-selector__range-input" placeholder="<?php esc_attr_e('Select dates', 'mobile-bottom-bar'); ?>" readonly style="display: none;" />
 						<div class="wp-mbb-hotel-selector__calendar"></div>
 						<input type="hidden" id="wp-mbb-arrival" />
 						<input type="hidden" id="wp-mbb-departure" />
+					</div>
+				</div>
+
+				<!-- Selection Summary -->
+				<div id="wp-mbb-selection-summary" class="wp-mbb-selection-summary" style="display: none;">
+					<div class="wp-mbb-selection-summary__content">
+						<div class="wp-mbb-selection-summary__item">
+							<span class="wp-mbb-selection-summary__label">Hotel:</span>
+							<span id="wp-mbb-summary-hotel" class="wp-mbb-selection-summary__value">-</span>
+						</div>
+						<div class="wp-mbb-selection-summary__item">
+							<span class="wp-mbb-selection-summary__label">Arrival:</span>
+							<span id="wp-mbb-summary-arrival" class="wp-mbb-selection-summary__value">-</span>
+						</div>
+						<div class="wp-mbb-selection-summary__item">
+							<span class="wp-mbb-selection-summary__label">Departure:</span>
+							<span id="wp-mbb-summary-departure" class="wp-mbb-selection-summary__value">-</span>
+						</div>
 					</div>
 				</div>
 
@@ -132,7 +150,30 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
     const calendarContainer = modal.querySelector('.wp-mbb-hotel-selector__calendar');
     const arrivalHidden = document.getElementById('wp-mbb-arrival');
     const departureHidden = document.getElementById('wp-mbb-departure');
+    const hotelSelect = document.getElementById('wp-mbb-hotel-select');
+    const summaryContainer = document.getElementById('wp-mbb-selection-summary');
+    const summaryHotel = document.getElementById('wp-mbb-summary-hotel');
+    const summaryArrival = document.getElementById('wp-mbb-summary-arrival');
+    const summaryDeparture = document.getElementById('wp-mbb-summary-departure');
     let pickerInstance = null;
+
+    // Update selection summary if both hotel and dates are selected
+    function updateSummary() {
+        const selectedHotel = hotelSelect.value;
+        const selectedHotelText = hotelSelect.options[hotelSelect.selectedIndex]?.text || '';
+        const arrival = arrivalHidden.value;
+        const departure = departureHidden.value;
+
+        // Show summary only if all three values are selected
+        if (selectedHotel && arrival && departure) {
+            summaryHotel.textContent = selectedHotelText;
+            summaryArrival.textContent = arrival;
+            summaryDeparture.textContent = departure;
+            summaryContainer.style.display = 'block';
+        } else {
+            summaryContainer.style.display = 'none';
+        }
+    }
 
     // Create hidden trigger input for easepick (prevents stray text nodes in calendar)
     function createTriggerInput() {
@@ -233,6 +274,9 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                             
                             // Reapply custom colors after easepick updates the DOM
                             reapplyDateColors();
+                            
+                            // Update summary if hotel is also selected
+                            updateSummary();
                         });
                     }
                 };
@@ -298,6 +342,11 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
 
     // Listen for reset from frontend.js
     document.addEventListener('wp-mbb-reset-easepick', resetPicker);
+
+    // Listen for hotel selection changes
+    if (hotelSelect) {
+        hotelSelect.addEventListener('change', updateSummary);
+    }
 
     // Expose for debugging/external use
     window.wpMbbPicker = pickerInstance;

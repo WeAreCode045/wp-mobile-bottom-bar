@@ -649,13 +649,16 @@
 .wp-mbb-hotel-selector__dates {
   position: relative;
   margin: -1.75rem -1.75rem 0 -1.75rem;
+  display: flex;
+  justify-content: center;
 }
 
 .wp-mbb-hotel-selector__calendar {
   margin-top: 0;
   padding: 1.75rem;
   background: #ffffff;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 .wp-mbb-hotel-selector__range-input {
@@ -763,6 +766,63 @@
 .wp-mbb-hotel-selector__cta:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.2);
+}
+
+/* Selection Summary Styling */
+.wp-mbb-selection-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1.5rem 0 1rem 0;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wp-mbb-selection-summary__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.wp-mbb-selection-summary__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wp-mbb-selection-summary__item:last-child {
+  border-bottom: none;
+}
+
+.wp-mbb-selection-summary__label {
+  font-weight: 600;
+  color: #475569;
+  font-family: Verdana, sans-serif;
+  font-size: 0.9rem;
+}
+
+.wp-mbb-selection-summary__value {
+  color: #0f172a;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Dropdown option styling - more visible */
+.wp-mbb-hotel-selector__select {
+  accent-color: #fb304b;
 }
 
 .wp-mbb-hotel-selector__error {
