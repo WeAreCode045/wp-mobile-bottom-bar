@@ -134,9 +134,13 @@ final class Mobile_Bottom_Bar_Plugin {
 
 
         // Enqueue Google Maps Places API for address autocomplete
+        $settings = $this->get_settings();
+        $general_settings = $settings['generalSettings'] ?? $this->get_default_general_settings();
+        $api_key = $general_settings['googleApiKey'] ?? '';
+        
         wp_enqueue_script(
             'google-maps-places',
-            'https://maps.googleapis.com/maps/api/js?key=&libraries=places',
+            'https://maps.googleapis.com/maps/api/js?key=' . urlencode($api_key) . '&libraries=places',
             [],
             null,
             false
@@ -358,7 +362,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'globalStyle' => $this->sanitize_style($raw['globalStyle'] ?? null),
             'defaultCustomMenu' => $this->sanitize_custom_items($raw['defaultCustomMenu'] ?? []),
             'defaultModalStyle' => isset($raw['defaultModalStyle']) ? $this->sanitize_modal_style($raw['defaultModalStyle']) : $this->get_default_modal_style(),
-            'contactFormSettings' => isset($raw['contactFormSettings']) ? $this->sanitize_contact_form_settings($raw['contactFormSettings']) : $this->get_default_contact_form_settings(),
+            'generalSettings' => isset($raw['generalSettings']) ? $this->sanitize_general_settings($raw['generalSettings']) : $this->get_default_general_settings(),
         ];
     }
 
@@ -368,7 +372,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'globalStyle' => $this->sanitize_style($data['globalStyle'] ?? null),
             'defaultCustomMenu' => $this->sanitize_custom_items($data['defaultCustomMenu'] ?? []),
             'defaultModalStyle' => isset($data['defaultModalStyle']) ? $this->sanitize_modal_style($data['defaultModalStyle']) : $this->get_default_modal_style(),
-            'contactFormSettings' => isset($data['contactFormSettings']) ? $this->sanitize_contact_form_settings($data['contactFormSettings']) : $this->get_default_contact_form_settings(),
+            'generalSettings' => isset($data['generalSettings']) ? $this->sanitize_general_settings($data['generalSettings']) : $this->get_default_general_settings(),
         ];
     }
 
@@ -534,6 +538,23 @@ final class Mobile_Bottom_Bar_Plugin {
             'modalAccentColor' => sanitize_hex_color($style['modalAccentColor'] ?? $defaults['modalAccentColor']) ?: $defaults['modalAccentColor'],
             'borderRadius' => max(0, min(48, (int) ($style['borderRadius'] ?? $defaults['borderRadius']))),
             'maxWidth' => max(320, min(640, (int) ($style['maxWidth'] ?? $defaults['maxWidth']))),
+        ];
+    }
+
+    private function get_default_general_settings(): array {
+        return [
+            'googleApiKey' => '',
+            'contactForm' => $this->get_default_contact_form_settings(),
+        ];
+    }
+
+    private function sanitize_general_settings($settings): array {
+        $settings = is_array($settings) ? $settings : [];
+        $defaults = $this->get_default_general_settings();
+
+        return [
+            'googleApiKey' => sanitize_text_field($settings['googleApiKey'] ?? $defaults['googleApiKey']),
+            'contactForm' => $this->sanitize_contact_form_settings($settings['contactForm'] ?? []),
         ];
     }
 
@@ -1116,7 +1137,7 @@ final class Mobile_Bottom_Bar_Plugin {
         }
 
         $is_calendar = !empty($item['type']) && in_array($item['type'], ['mylighthouse', 'mylighthouse-multi'], true);
-        $book_label_markup = $is_calendar ? '<span class="wp-mbb__book-label"><span class="wp-mbb__book-chevron">^</span>BOOK</span>' : '';
+        $book_label_markup = $is_calendar ? '<span class="wp-mbb__book-label"><i class="fa-solid fa-angle-up"></i>BOOK</span>' : '';
 
         return '<a class="' . esc_attr(implode(' ', $item_classes)) . '" href="' . esc_url($item['href'] ?? '#') . '"' . $target . $rel . $data_attributes . '>'
             . '<span class="wp-mbb__icon" aria-hidden="true">' . $this->render_icon_markup($item['icon'] ?? null) . '</span>'
@@ -1814,7 +1835,8 @@ final class Mobile_Bottom_Bar_Plugin {
 
         // Get contact form settings
         $settings = $this->get_settings();
-        $form_settings = $settings['contactFormSettings'] ?? $this->get_default_contact_form_settings();
+        $general_settings = $settings['generalSettings'] ?? $this->get_default_general_settings();
+        $form_settings = $general_settings['contactForm'] ?? $this->get_default_contact_form_settings();
 
         // Use recipient from menu item config, fallback to fromEmail setting
         $to_email = !empty($recipient) && is_email($recipient) ? $recipient : $form_settings['fromEmail'];
