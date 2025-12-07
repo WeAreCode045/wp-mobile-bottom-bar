@@ -307,26 +307,6 @@
       startLocationGroup.appendChild(startInputWrapper);
       routeContainer.appendChild(startLocationGroup);
 
-      // Initialize Google Places Autocomplete on start location input
-      if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-        try {
-          var autocomplete = new google.maps.places.Autocomplete(startInput, {
-            types: ['geocode', 'establishment'],
-            fields: ['formatted_address', 'geometry', 'name']
-          });
-
-          autocomplete.addListener('place_changed', function() {
-            var place = autocomplete.getPlace();
-            if (place.formatted_address) {
-              startInput.value = place.formatted_address;
-              routeButton.disabled = false;
-            }
-          });
-        } catch (e) {
-          console.warn('Google Places Autocomplete initialization failed:', e);
-        }
-      }
-
       // Route button container
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'wp-mbb-map-actions';
@@ -341,6 +321,32 @@
       routeContainer.appendChild(buttonContainer);
 
       body.appendChild(routeContainer);
+
+      // Initialize Google Places Autocomplete on start location input
+      // Use setTimeout to ensure Google Maps API is fully loaded
+      setTimeout(function() {
+        if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+          try {
+            var autocomplete = new google.maps.places.Autocomplete(startInput, {
+              types: ['geocode', 'establishment'],
+              fields: ['formatted_address', 'geometry', 'name']
+            });
+
+            autocomplete.addListener('place_changed', function() {
+              var place = autocomplete.getPlace();
+              if (place.formatted_address) {
+                startInput.value = place.formatted_address;
+                routeButton.disabled = false;
+              }
+            });
+            console.log('[Mobile Bottom Bar] Google Places Autocomplete initialized for start location');
+          } catch (e) {
+            console.warn('[Mobile Bottom Bar] Google Places Autocomplete initialization failed:', e);
+          }
+        } else {
+          console.warn('[Mobile Bottom Bar] Google Maps Places API not available');
+        }
+      }, 100);
 
       // Enable route button when start location is entered
       startInput.addEventListener('input', function() {

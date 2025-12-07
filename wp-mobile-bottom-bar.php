@@ -204,6 +204,18 @@ final class Mobile_Bottom_Bar_Plugin {
             $this->ensure_lighthouse_assets_enqueued();
         }
 
+        // Enqueue Google Maps API for map menu items (geocoding, directions, autocomplete)
+        $api_key = $settings['contactFormSettings']['googleApiKey'] ?? '';
+        if (!empty($api_key)) {
+            wp_enqueue_script(
+                'google-maps-api-frontend',
+                'https://maps.googleapis.com/maps/api/js?key=' . urlencode($api_key) . '&libraries=places',
+                [],
+                null,
+                false
+            );
+        }
+
         wp_enqueue_style(
             'mobile-bottom-bar-frontend',
             plugin_dir_url(__FILE__) . 'public/frontend.css',
@@ -214,7 +226,7 @@ final class Mobile_Bottom_Bar_Plugin {
         wp_enqueue_script(
             'mobile-bottom-bar-frontend-js',
             plugin_dir_url(__FILE__) . 'public/frontend.js',
-            [],
+            !empty($api_key) ? ['google-maps-api-frontend'] : [],
             self::VERSION,
             true
         );
