@@ -403,6 +403,7 @@
           '?origin=' + encodeURIComponent(startLocation) +
           '&destination=' + encodeURIComponent(mapAddress) +
           '&mode=driving' +
+          '&language=nl' +
           '&key=' + encodeURIComponent(apiKey);
 
         // Note: Direct browser fetch to Google APIs will fail due to CORS

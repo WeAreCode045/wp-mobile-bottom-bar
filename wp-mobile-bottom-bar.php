@@ -1887,6 +1887,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'origin' => $origin,
             'destination' => $destination,
             'mode' => 'driving',
+            'language' => 'nl',
             'key' => $api_key
         ], 'https://maps.googleapis.com/maps/api/directions/json');
 
