@@ -59,7 +59,7 @@ wp_enqueue_script(
 );
 ?>
 
-<div id="wp-mbb-multi-hotel-modal" class="wp-mbb-modal-overlay" aria-hidden="true" style="display: none;">
+<div id="wp-mbb-multi-hotel-modal" class="wp-mbb-modal-overlay" aria-hidden="true" style="display: none;" data-single-hotel="">
 	<div class="wp-mbb-modal-container">
 		<button type="button" class="wp-mbb-modal-close" aria-label="<?php esc_attr_e('Close', 'mobile-bottom-bar'); ?>">
 			<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
@@ -75,8 +75,8 @@ wp_enqueue_script(
 		<div class="wp-mbb-modal-body">
 			<div class="wp-mbb-hotel-selector">
 				
-				<!-- Hotel Selection -->
-				<div class="wp-mbb-hotel-selector__field">
+				<!-- Hotel Selection (hidden for single hotel mode) -->
+				<div id="wp-mbb-hotel-field" class="wp-mbb-hotel-selector__field">
 					<label for="wp-mbb-hotel-select" class="wp-mbb-hotel-selector__label">
 						<?php esc_html_e('Choose your preferred hotel', 'mobile-bottom-bar'); ?>
 					</label>
@@ -156,6 +156,28 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
     const summaryArrival = document.getElementById('wp-mbb-summary-arrival');
     const summaryDeparture = document.getElementById('wp-mbb-summary-departure');
     let pickerInstance = null;
+
+    // Initialize modal for single hotel mode (hide dropdown, use preselected hotel)
+    function initializeSingleHotelMode(hotelName) {
+        const hotelField = document.getElementById('wp-mbb-hotel-field');
+        if (hotelField) {
+            hotelField.style.display = 'none';
+        }
+        // Set the hotel select to the preselected value
+        if (hotelSelect && hotelSelect.options.length > 0) {
+            // Try to find the hotel in the options
+            for (let i = 0; i < hotelSelect.options.length; i++) {
+                if (hotelSelect.options[i].text === hotelName || hotelSelect.options[i].value === hotelName) {
+                    hotelSelect.value = hotelSelect.options[i].value;
+                    break;
+                }
+            }
+            // If not found, select the first option
+            if (!hotelSelect.value && hotelSelect.options.length > 0) {
+                hotelSelect.selectedIndex = 0;
+            }
+        }
+    }
 
     // Update selection summary if both hotel and dates are selected
     function updateSummary() {
@@ -351,5 +373,24 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
     // Expose for debugging/external use
     window.wpMbbPicker = pickerInstance;
     window.wpMbbResetPicker = resetPicker;
+    
+    // Expose function to open modal in single hotel mode
+    window.wpMbbOpenSingleHotelModal = function(hotelName) {
+        modal.setAttribute('data-single-hotel', 'true');
+        initializeSingleHotelMode(hotelName);
+        resetPicker();
+        modal.classList.add('is-visible');
+    };
+    
+    // Expose function to open modal in multi-hotel mode
+    window.wpMbbOpenMultiHotelModal = function() {
+        modal.removeAttribute('data-single-hotel');
+        const hotelField = document.getElementById('wp-mbb-hotel-field');
+        if (hotelField) {
+            hotelField.style.display = 'block';
+        }
+        resetPicker();
+        modal.classList.add('is-visible');
+    };
 })();
 </script>
