@@ -420,7 +420,7 @@ final class Mobile_Bottom_Bar_Plugin {
     private function get_default_style(): array {
         return [
             'barStyle' => 'dark',
-            'accentColor' => '#6366f1',
+            'accentColor' => '#fb304b',
             'barBackgroundColor' => '#0f172a',
             'iconBackgroundColor' => '#1f2937',
             'iconBackgroundRadius' => 14,
@@ -434,7 +434,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'iconSize' => 20,
             'iconColor' => '#9ca3af',
             'calendarIconSize' => 56,
-            'calendarIconColor' => '#6366f1',
+            'calendarIconColor' => '#fb304b',
             'textSize' => 12,
             'textWeight' => '400',
             'textFont' => 'system-ui',
@@ -447,7 +447,7 @@ final class Mobile_Bottom_Bar_Plugin {
             'overlayColor' => '#0f172a',
             'modalBackgroundColor' => '#ffffff',
             'modalTextColor' => '#0f172a',
-            'modalAccentColor' => '#6366f1',
+            'modalAccentColor' => '#fb304b',
             'borderRadius' => 16,
             'maxWidth' => 420,
         ];
@@ -677,7 +677,7 @@ final class Mobile_Bottom_Bar_Plugin {
         $bar_style = in_array($bar['barStyle'] ?? 'dark', ['light', 'dark'], true) ? $bar['barStyle'] : 'dark';
         $name = sanitize_text_field($bar['name'] ?? sprintf(__('Bottom Bar %d', 'mobile-bottom-bar'), $index + 1));
 
-        $accent_color = sanitize_hex_color($bar['accentColor'] ?? '#6366f1') ?: '#6366f1';
+        $accent_color = sanitize_hex_color($bar['accentColor'] ?? '#fb304b') ?: '#fb304b';
         $corner_defaults = $this->get_default_sidebar_corner_radius();
         $corner_input = $bar['desktopSidebarCornerRadius'] ?? null;
 

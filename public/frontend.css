@@ -414,7 +414,7 @@
 }
 
 .wp-mbb-overlay.is-visible {
-  display: flex;
+  display: flex!important;
 }
 
 .wp-mbb-modal {
@@ -441,9 +441,10 @@
 }
 
 .wp-mbb-modal__title {
-  margin: 0 0 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+    margin: 10px 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: Verdana;
 }
 
 .wp-mbb-modal__body {
@@ -640,6 +641,7 @@
 }
 
 .wp-mbb-form-field label {
+  font-family: Verdana;
   font-size: 0.875rem;
   font-weight: 500;
   color: #334155;
@@ -662,8 +664,8 @@
 .wp-mbb-form-field input:focus,
 .wp-mbb-form-field textarea:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #fb304b;
+  box-shadow: 0 0 0 3px rgba(251, 48, 75, 0.1);
 }
 
 .wp-mbb-form-field textarea {
@@ -673,7 +675,7 @@
 
 .wp-mbb-form-submit {
   padding: 0.75rem 1.5rem;
-  background: #6366f1;
+  background: #fb304b;
   color: #ffffff;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -684,7 +686,7 @@
 }
 
 .wp-mbb-form-submit:hover:not(:disabled) {
-  background: #4f46e5;
+  background: #fb304b;
 }
 
 .wp-mbb-form-submit:disabled {

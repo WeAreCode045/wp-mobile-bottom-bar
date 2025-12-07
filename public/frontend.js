@@ -533,13 +533,24 @@
         const payload = parsePayload(target.dataset.payload);
         const hotels = Array.isArray(payload.hotels) ? payload.hotels : [];
 
-        // If only one hotel is configured, use the new inline modal (no dropdown)
-        if (hotels.length === 1 && typeof window.wpMbbOpenSingleHotelModal === 'function') {
+        // Always use the hotel selection modal (it will adapt to single vs multi)
+        if (hotels.length === 1) {
+          // Single hotel: open modal without dropdown selector
           const hotelName = hotels[0].name || hotels[0].id || '';
           console.log('[Mobile Bottom Bar] Opening single-hotel modal for', hotelName);
-          window.wpMbbOpenSingleHotelModal(hotelName);
+          
+          if (typeof window.wpMbbOpenSingleHotelModal === 'function') {
+            window.wpMbbOpenSingleHotelModal(hotelName);
+          } else {
+            console.warn('[Mobile Bottom Bar] wpMbbOpenSingleHotelModal function not available');
+          }
+        } else if (hotels.length > 1) {
+          // Multi hotel: show dropdown selector
+          console.log('[Mobile Bottom Bar] Opening multi-hotel modal');
+          openHotelSelectionModal(hotelModalRefs, hotels, payload);
         } else {
-          // Fallback to legacy mylighthouse modal
+          // Fallback to legacy mylighthouse modal if no hotels configured
+          console.log('[Mobile Bottom Bar] No hotels found, falling back to legacy modal');
           triggerLighthouseCalendar(payload);
         }
         return;
