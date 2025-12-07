@@ -78,7 +78,7 @@ wp_enqueue_script(
 				<!-- Hotel Selection -->
 				<div class="wp-mbb-hotel-selector__field">
 					<label for="wp-mbb-hotel-select" class="wp-mbb-hotel-selector__label">
-						<?php esc_html_e('Select Hotel', 'mobile-bottom-bar'); ?>
+						<?php esc_html_e('Choose your preferred hotel', 'mobile-bottom-bar'); ?>
 					</label>
 					<select id="wp-mbb-hotel-select" class="wp-mbb-hotel-selector__select">
 						<!-- Options populated by JavaScript -->
