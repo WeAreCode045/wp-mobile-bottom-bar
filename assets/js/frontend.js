@@ -20,6 +20,100 @@
     }
   }
 
+  /**
+   * Get the appropriate display mode based on device width
+   * Respects mylighthouse-booker settings per device type
+   */
+  function getDisplayModeForDevice() {
+    if (!wpMbbConfig || !wpMbbConfig.lighthouse) {
+      return 'modal';
+    }
+
+    const width = window.innerWidth;
+    
+    // Mobile: <= 767px
+    if (width <= 767) {
+      return wpMbbConfig.lighthouse.displayModeMobile || 'modal';
+    }
+    
+    // Tablet: 768px - 1024px
+    if (width <= 1024) {
+      return wpMbbConfig.lighthouse.displayModeTablet || 'modal';
+    }
+    
+    // Desktop: > 1024px
+    return wpMbbConfig.lighthouse.displayModeDesktop || 'modal';
+  }
+
+  /**
+   * Get booking page URL from lighthouse config
+   */
+  function getBookingPageUrl() {
+    return wpMbbConfig?.lighthouse?.bookingPageUrl || '';
+  }
+
+  /**
+   * Redirect to booking page with parameters
+   */
+  function redirectToBookingPage(hotelId, arrival, departure, roomId, rateId) {
+    const bookingUrl = getBookingPageUrl();
+    if (!bookingUrl) {
+      console.error('[Mobile Bottom Bar] Booking page URL not configured');
+      return false;
+    }
+
+    try {
+      const url = new URL(bookingUrl, window.location.origin);
+      if (hotelId) url.searchParams.set('hotel_id', hotelId);
+      if (arrival) url.searchParams.set('Arrival', arrival);
+      if (departure) url.searchParams.set('Departure', departure);
+      if (roomId) url.searchParams.set('room', roomId);
+      if (rateId) {
+        url.searchParams.delete('rate');
+        url.searchParams.set('Rate', rateId);
+      }
+      
+      console.log('[Mobile Bottom Bar] Redirecting to booking page:', url.toString());
+      window.location.href = url.toString();
+      return true;
+    } catch (error) {
+      console.error('[Mobile Bottom Bar] Failed to construct booking URL:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Redirect directly to MyLighthouse booking engine
+   */
+  function redirectToBookingEngine(hotelId, arrival, departure, roomId, rateId) {
+    const engineBase = window.MLBBookingEngineBase || 'https://bookingengine.mylighthouse.com/';
+    
+    try {
+      let engineUrl;
+      if (rateId) {
+        engineUrl = engineBase + encodeURIComponent(hotelId) + '/Rooms/GeneralAvailability?Rate=' + encodeURIComponent(rateId);
+      } else {
+        engineUrl = engineBase + encodeURIComponent(hotelId) + '/Rooms/Select';
+      }
+      
+      const params = [];
+      if (arrival) params.push('Arrival=' + encodeURIComponent(arrival));
+      if (departure) params.push('Departure=' + encodeURIComponent(departure));
+      if (roomId && !rateId) params.push('room=' + encodeURIComponent(roomId));
+      
+      if (params.length > 0) {
+        engineUrl += (engineUrl.includes('?') ? '&' : '?') + params.join('&');
+      }
+      
+      console.log('[Mobile Bottom Bar] Redirecting to booking engine:', engineUrl);
+      window.location.href = engineUrl;
+      return true;
+    } catch (error) {
+      console.error('[Mobile Bottom Bar] Failed to construct engine URL:', error);
+      return false;
+    }
+  }
+
   function createOverlay() {
     const overlay = document.createElement('div');
     overlay.className = 'wp-mbb-overlay';
@@ -167,17 +261,23 @@
       // Close modal
       closeHotelSelectionModal(hotelModalRefs);
 
-      // Prefer bookingUrl for direct redirect; fall back to form trigger
-      if (bookingUrl) {
-        const url = new URL(bookingUrl, window.location.origin);
-        url.searchParams.set('hotel_id', hotelId);
-        url.searchParams.set('Arrival', arrival);
-        url.searchParams.set('Departure', departure);
-        window.location.href = url.toString();
+      // Respect mylighthouse-booker display mode settings
+      const displayMode = getDisplayModeForDevice();
+      console.log('[Mobile Bottom Bar] Display mode for device:', displayMode);
+
+      if (displayMode === 'redirect_engine') {
+        // Direct redirect to MyLighthouse booking engine
+        redirectToBookingEngine(hotelId, arrival, departure);
         return;
       }
 
-      // Fallback: trigger existing modal flow with selected hotel
+      if (displayMode === 'booking_page') {
+        // Redirect to configured booking page
+        redirectToBookingPage(hotelId, arrival, departure);
+        return;
+      }
+
+      // displayMode === 'modal': trigger MyLighthouse modal
       triggerLighthouseCalendar(payload, hotelId);
     };
   }
@@ -531,26 +631,23 @@
         event.stopPropagation();
         console.log('[Mobile Bottom Bar] Single hotel mode detected');
         const payload = parsePayload(target.dataset.payload);
+        const displayMode = getDisplayModeForDevice();
+        console.log('[Mobile Bottom Bar] Display mode:', displayMode);
+        
         const hotels = Array.isArray(payload.hotels) ? payload.hotels : [];
 
-        // Always use the hotel selection modal (it will adapt to single vs multi)
-        if (hotels.length === 1) {
-          // Single hotel: open modal without dropdown selector
-          const hotelName = hotels[0].name || hotels[0].id || '';
-          console.log('[Mobile Bottom Bar] Opening single-hotel modal for', hotelName);
-          
-          if (typeof window.wpMbbOpenSingleHotelModal === 'function') {
-            window.wpMbbOpenSingleHotelModal(hotelName);
+        // Always use our own date picker modal for single hotel
+        // The display mode will determine what happens after date selection
+        if (hotels.length > 0) {
+          if (hotels.length === 1) {
+            console.log('[Mobile Bottom Bar] Opening single-hotel date picker modal for', hotels[0].name);
           } else {
-            console.warn('[Mobile Bottom Bar] wpMbbOpenSingleHotelModal function not available');
+            console.log('[Mobile Bottom Bar] Opening multi-hotel modal');
           }
-        } else if (hotels.length > 1) {
-          // Multi hotel: show dropdown selector
-          console.log('[Mobile Bottom Bar] Opening multi-hotel modal');
           openHotelSelectionModal(hotelModalRefs, hotels, payload);
         } else {
-          // Fallback to legacy mylighthouse modal if no hotels configured
-          console.log('[Mobile Bottom Bar] No hotels found, falling back to legacy modal');
+          // Fallback if no hotels configured - use MyLighthouse modal
+          console.log('[Mobile Bottom Bar] No hotels found, falling back to MyLighthouse modal');
           triggerLighthouseCalendar(payload);
         }
         return;

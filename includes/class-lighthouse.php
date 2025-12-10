@@ -102,9 +102,17 @@ class MBB_Lighthouse {
     public function build_lighthouse_script_params(): array {
         $meta = $this->get_mylighthouse_bootstrap();
 
+        // Get device-specific display modes
+        $display_mode_mobile = get_option('mlb_display_mode_mobile', get_option('mlb_display_mode', 'modal'));
+        $display_mode_tablet = get_option('mlb_display_mode_tablet', get_option('mlb_display_mode', 'modal'));
+        $display_mode_desktop = get_option('mlb_display_mode_desktop', get_option('mlb_display_mode', 'modal'));
+
         return [
             'booking_page_url' => $meta['bookingPageUrl'] ?? '',
             'result_target' => $meta['displayMode'] ?? 'modal',
+            'display_mode_mobile' => $display_mode_mobile,
+            'display_mode_tablet' => $display_mode_tablet,
+            'display_mode_desktop' => $display_mode_desktop,
             'spinner_image_url' => $this->get_lighthouse_spinner_url(),
         ];
     }
@@ -293,6 +301,14 @@ class MBB_Lighthouse {
             'payload' => [
                 'formId' => $form_id,
                 'hotelId' => $hotel_id,
+                'hotelName' => $hotel_name !== '' ? $hotel_name : $hotel_id,
+                'bookingUrl' => $booking_url,
+                'hotels' => [
+                    [
+                        'id' => $hotel_id,
+                        'name' => $hotel_name !== '' ? $hotel_name : $hotel_id,
+                    ]
+                ],
             ],
             'linkTargetBehavior' => 'self',
         ];

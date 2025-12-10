@@ -71,6 +71,8 @@ class MBB_Frontend {
             true
         );
 
+        $lighthouse_params = $this->lighthouse->build_lighthouse_script_params();
+
         wp_localize_script(
             'mobile-bottom-bar-frontend-js',
             'wpMbbConfig',
@@ -78,7 +80,15 @@ class MBB_Frontend {
                 'pluginUrl' => plugin_dir_url(dirname(__FILE__)),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('wp_rest'),
-                'googleApiKey' => $api_key
+                'googleApiKey' => $api_key,
+                'lighthouse' => [
+                    'isActive' => $this->lighthouse->has_mylighthouse_plugin(),
+                    'bookingPageUrl' => $lighthouse_params['booking_page_url'] ?? '',
+                    'displayModeMobile' => $lighthouse_params['display_mode_mobile'] ?? 'modal',
+                    'displayModeTablet' => $lighthouse_params['display_mode_tablet'] ?? 'modal',
+                    'displayModeDesktop' => $lighthouse_params['display_mode_desktop'] ?? 'modal',
+                    'spinnerImageUrl' => $lighthouse_params['spinner_image_url'] ?? '',
+                ]
             ]
         );
     }
