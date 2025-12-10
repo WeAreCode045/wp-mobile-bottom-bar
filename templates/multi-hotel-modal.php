@@ -294,7 +294,7 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                     element: pickerElement,
                     inline: true,
                     css: [
-                        'wp-content/assets/vendor/easepick/easepick.css'
+                        '/wp-content/assets/vendor/easepick/easepick.css'
                     ],
                     plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
                     RangePlugin: {
