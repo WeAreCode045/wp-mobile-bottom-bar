@@ -15,42 +15,13 @@ defined('ABSPATH') || exit;
 $plugin_file = dirname(dirname(__FILE__)) . '/wp-mobile-bottom-bar.php';
 $plugin_url = plugin_dir_url($plugin_file);
 
-// Force use of local easepick CSS with our custom modifications
-// Check if mylighthouse-booker has already registered easepick, if so use that, otherwise use ours
-if (!wp_style_is('easepick', 'registered')) {
-    // Register with handle 'easepick' to ensure compatibility
-    $easepick_css_path = dirname(dirname(__FILE__)) . '/public/vendor/easepick/easepick.css';
-    $easepick_css_ver = (file_exists($easepick_css_path)) ? filemtime($easepick_css_path) : '1.2.1';
-    wp_register_style(
-        'easepick',
-        $plugin_url . 'public/vendor/easepick/easepick.css',
-        [],
-        $easepick_css_ver
-    );
-} else {
-    // If already registered, check if it's from CDN and deregister
-    global $wp_styles;
-    if (isset($wp_styles->registered['easepick'])) {
-        $registered_src = $wp_styles->registered['easepick']->src;
-        // If it's from CDN, deregister and use our local version
-        if (strpos($registered_src, 'cdn.') !== false) {
-            wp_deregister_style('easepick');
-            $easepick_css_path = dirname(dirname(__FILE__)) . '/public/vendor/easepick/easepick.css';
-            $easepick_css_ver = (file_exists($easepick_css_path)) ? filemtime($easepick_css_path) : '1.2.1';
-            wp_register_style(
-                'easepick',
-                $plugin_url . 'public/vendor/easepick/easepick.css',
-                [],
-                $easepick_css_ver
-            );
-        }
-    }
-}
-
-// Enqueue the easepick CSS
-if (!wp_style_is('easepick', 'enqueued')) {
-    wp_enqueue_style('easepick');
-}
+// Enqueue easepick CSS from local vendor directory
+wp_enqueue_style(
+    'wp-mbb-easepick',
+    $plugin_url . 'public/vendor/easepick/easepick.css',
+    [],
+    '1.2.1'
+);
 
 // Enqueue easepick dependencies from CDN (UMD bundles work best from CDN)
 wp_enqueue_script(
