@@ -18,7 +18,7 @@ $plugin_url = plugin_dir_url($plugin_file);
 // Enqueue easepick CSS from local vendor directory
 wp_enqueue_style(
     'wp-mbb-easepick',
-    $plugin_url . 'public/vendor/easepick/easepick.css',
+    $plugin_url . 'assets/vendor/easepick/easepick.css',
     [],
     '1.2.1'
 );
@@ -43,7 +43,7 @@ wp_enqueue_script(
 // Enqueue easepick core from local vendor directory
 wp_enqueue_script(
     'wp-mbb-easepick-core',
-    $plugin_url . 'public/vendor/easepick/easepick.js',
+    $plugin_url . 'assets/vendor/easepick/easepick.js',
     ['easepick-datetime', 'easepick-base-plugin'],
     '1.2.1',
     true
@@ -52,7 +52,7 @@ wp_enqueue_script(
 // Enqueue easepick range plugin from local vendor directory
 wp_enqueue_script(
     'wp-mbb-easepick-range',
-    $plugin_url . 'public/vendor/easepick/easepick-range.js',
+    $plugin_url . 'assets/vendor/easepick/easepick-range.js',
     ['wp-mbb-easepick-core'],
     '1.2.1',
     true
