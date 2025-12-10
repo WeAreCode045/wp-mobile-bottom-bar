@@ -10,28 +10,53 @@
 
 defined('ABSPATH') || exit;
 
-// Use easepick assets from mylighthouse-booker plugin instead of bundling our own
-// This prevents conflicts and ensures consistent behavior across both plugins
+// Enqueue easepick assets for the date picker
+// Get the plugin directory URL correctly by using the main plugin file
+$plugin_file = dirname(dirname(__FILE__)) . '/wp-mobile-bottom-bar.php';
+$plugin_url = plugin_dir_url($plugin_file);
 
-// Enqueue mylighthouse-booker easepick CSS
-if (!wp_style_is('easepick', 'enqueued')) {
-    wp_enqueue_style('easepick');
-}
+// Enqueue easepick CSS from local vendor directory
+wp_enqueue_style(
+    'wp-mbb-easepick',
+    $plugin_url . 'public/vendor/easepick/easepick.css',
+    [],
+    '1.2.1'
+);
 
-// Enqueue mylighthouse-booker easepick scripts
-$easepick_scripts = [
+// Enqueue easepick dependencies from CDN (UMD bundles work best from CDN)
+wp_enqueue_script(
     'easepick-datetime',
-    'easepick-base-plugin',
-    'easepick-core',
-    'easepick-range',
-    'easepick-lock'
-];
+    'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
+    [],
+    '1.2.1',
+    true
+);
 
-foreach ($easepick_scripts as $handle) {
-    if (!wp_script_is($handle, 'enqueued')) {
-        wp_enqueue_script($handle);
-    }
-}
+wp_enqueue_script(
+    'easepick-base-plugin',
+    'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
+    ['easepick-datetime'],
+    '1.2.1',
+    true
+);
+
+// Enqueue easepick core from local vendor directory
+wp_enqueue_script(
+    'wp-mbb-easepick-core',
+    $plugin_url . 'public/vendor/easepick/easepick.js',
+    ['easepick-datetime', 'easepick-base-plugin'],
+    '1.2.1',
+    true
+);
+
+// Enqueue easepick range plugin from local vendor directory
+wp_enqueue_script(
+    'wp-mbb-easepick-range',
+    $plugin_url . 'public/vendor/easepick/easepick-range.js',
+    ['wp-mbb-easepick-core'],
+    '1.2.1',
+    true
+);
 ?>
 
 <div id="wp-mbb-multi-hotel-modal" class="wp-mbb-modal-overlay" aria-hidden="true" style="display: none;" data-single-hotel="">
