@@ -381,9 +381,35 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
         hotelSelect.addEventListener('change', updateSummary);
     }
 
+    // Hide picker (hides the calendar UI)
+    function hidePicker() {
+        if (pickerInstance && typeof pickerInstance.hide === 'function') {
+            try {
+                pickerInstance.hide();
+                console.log('[WP-MBB] Picker hidden');
+            } catch (e) {
+                console.warn('[WP-MBB] Error hiding picker:', e);
+            }
+        }
+    }
+
+    // Show picker (shows the calendar UI)
+    function showPicker() {
+        if (pickerInstance && typeof pickerInstance.show === 'function') {
+            try {
+                pickerInstance.show();
+                console.log('[WP-MBB] Picker shown');
+            } catch (e) {
+                console.warn('[WP-MBB] Error showing picker:', e);
+            }
+        }
+    }
+
     // Expose for debugging/external use
     window.wpMbbPicker = pickerInstance;
     window.wpMbbResetPicker = resetPicker;
+    window.wpMbbHidePicker = hidePicker;
+    window.wpMbbShowPicker = showPicker;
     
     // Expose function to open modal in single hotel mode
     window.wpMbbOpenSingleHotelModal = function(hotelName) {
@@ -391,6 +417,7 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
         initializeSingleHotelMode(hotelName);
         resetPicker();
         modal.classList.add('is-visible');
+        showPicker();
     };
     
     // Expose function to open modal in multi-hotel mode
@@ -402,6 +429,7 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
         }
         resetPicker();
         modal.classList.add('is-visible');
+        showPicker();
     };
 })();
 </script>

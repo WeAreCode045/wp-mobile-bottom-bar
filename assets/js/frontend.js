@@ -242,6 +242,11 @@
     if (rangeInput) rangeInput.value = '';
     document.dispatchEvent(new CustomEvent('wp-mbb-reset-easepick'));
 
+    // Show the easepick calendar UI
+    if (typeof window.wpMbbShowPicker === 'function') {
+      window.wpMbbShowPicker();
+    }
+
     // Attach CTA button handler (button already exists in template)
     cta.onclick = function (e) {
       e.preventDefault();
@@ -291,6 +296,11 @@
     if (!hotelModalRefs) return;
     
     const { overlay } = hotelModalRefs;
+
+    // Hide the easepick calendar UI
+    if (typeof window.wpMbbHidePicker === 'function') {
+      window.wpMbbHidePicker();
+    }
 
     overlay.classList.remove('is-visible');
     overlay.setAttribute('aria-hidden', 'true');
