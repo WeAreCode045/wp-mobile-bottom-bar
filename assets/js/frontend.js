@@ -283,7 +283,7 @@
       startLocationGroup.className = 'wp-mbb-route-field-group';
 
       const startLabel = document.createElement('label');
-      startLabel.textContent = 'Starting Location:';
+      startLabel.textContent = 'Route naar deze locatie:';
       startLabel.className = 'wp-mbb-route-label';
       startLocationGroup.appendChild(startLabel);
 
@@ -292,7 +292,7 @@
 
       const startInput = document.createElement('input');
       startInput.type = 'text';
-      startInput.placeholder = 'Enter your starting address';
+      startInput.placeholder = 'Je startadres of huidige locatie';
       startInput.className = 'wp-mbb-route-input';
       startInput.id = 'wp-mbb-start-location';
       startInputWrapper.appendChild(startInput);
@@ -301,7 +301,7 @@
       currentLocationBtn.type = 'button';
       currentLocationBtn.className = 'wp-mbb-current-location-btn';
       currentLocationBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
-      currentLocationBtn.title = 'Use current location';
+      currentLocationBtn.title = 'Gebruik huidige locatie';
       startInputWrapper.appendChild(currentLocationBtn);
 
       startLocationGroup.appendChild(startInputWrapper);
@@ -314,7 +314,7 @@
       const routeButton = document.createElement('button');
       routeButton.type = 'button';
       routeButton.className = 'wp-mbb-route-button';
-      routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Get Route';
+      routeButton.innerHTML = '<i class="fa-solid fa-route"></i> Plan route';
       routeButton.disabled = true;
       
       buttonContainer.appendChild(routeButton);

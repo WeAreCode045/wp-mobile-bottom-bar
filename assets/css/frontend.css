@@ -485,11 +485,12 @@
 }
 
 .wp-mbb-route-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1f2937;
+    font-family: Verdana;
+    margin-bottom: 0.5rem;
 }
 
 .wp-mbb-route-input-wrapper {
