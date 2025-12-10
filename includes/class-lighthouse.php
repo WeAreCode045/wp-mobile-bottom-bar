@@ -419,9 +419,6 @@ class MBB_Lighthouse {
             return;
         }
         
-        // Ensure lighthouse assets are enqueued before rendering template
-        $this->ensure_lighthouse_assets_enqueued();
-        
         $template_path = plugin_dir_path(dirname(__FILE__)) . 'templates/multi-hotel-modal.php';
         
         if (file_exists($template_path)) {

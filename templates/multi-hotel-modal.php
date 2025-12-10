@@ -10,8 +10,28 @@
 
 defined('ABSPATH') || exit;
 
-// Easepick assets from mylighthouse-booker plugin are automatically enqueued
-// by the Lighthouse class before this template is rendered
+// Use easepick assets from mylighthouse-booker plugin instead of bundling our own
+// This prevents conflicts and ensures consistent behavior across both plugins
+
+// Enqueue mylighthouse-booker easepick CSS
+if (!wp_style_is('easepick', 'enqueued')) {
+    wp_enqueue_style('easepick');
+}
+
+// Enqueue mylighthouse-booker easepick scripts
+$easepick_scripts = [
+    'easepick-datetime',
+    'easepick-base-plugin',
+    'easepick-core',
+    'easepick-range',
+    'easepick-lock'
+];
+
+foreach ($easepick_scripts as $handle) {
+    if (!wp_script_is($handle, 'enqueued')) {
+        wp_enqueue_script($handle);
+    }
+}
 ?>
 
 <div id="wp-mbb-multi-hotel-modal" class="wp-mbb-modal-overlay" aria-hidden="true" style="display: none;" data-single-hotel="">
