@@ -264,20 +264,25 @@
       // Respect mylighthouse-booker display mode settings
       const displayMode = getDisplayModeForDevice();
       console.log('[Mobile Bottom Bar] Display mode for device:', displayMode);
+      console.log('[Mobile Bottom Bar] Window width:', window.innerWidth);
+      console.log('[Mobile Bottom Bar] Lighthouse config:', wpMbbConfig?.lighthouse);
 
       if (displayMode === 'redirect_engine') {
         // Direct redirect to MyLighthouse booking engine
+        console.log('[Mobile Bottom Bar] Redirecting to booking engine');
         redirectToBookingEngine(hotelId, arrival, departure);
         return;
       }
 
       if (displayMode === 'booking_page') {
         // Redirect to configured booking page
+        console.log('[Mobile Bottom Bar] Redirecting to booking page');
         redirectToBookingPage(hotelId, arrival, departure);
         return;
       }
 
       // displayMode === 'modal': trigger MyLighthouse modal
+      console.log('[Mobile Bottom Bar] Triggering MyLighthouse modal');
       triggerLighthouseCalendar(payload, hotelId);
     };
   }
