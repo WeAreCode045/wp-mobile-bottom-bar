@@ -311,7 +311,7 @@
 		};
 		options = {
 			doc: document,
-			css: ["/wp-content/plugins/wp-mobile-bottom-bar/public/vendor/easepick/easepick.css"],
+			css: ["https://new.differenthotels.be/wp-content/plugins/mylighthouse-booker/assets/vendor/easepick/easepick.css"],
 			element: null,
 			firstDay: 1,
 			grid: 1,
