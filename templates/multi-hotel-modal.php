@@ -10,53 +10,26 @@
 
 defined('ABSPATH') || exit;
 
-// Enqueue easepick assets for the date picker
-// Get the plugin directory URL correctly by using the main plugin file
-$plugin_file = dirname(dirname(__FILE__)) . '/wp-mobile-bottom-bar.php';
-$plugin_url = plugin_dir_url($plugin_file);
+// Enqueue easepick assets from mylighthouse-booker plugin
+// The booking button requires mylighthouse-booker, so we always use its easepick assets
+// This avoids duplicate loading and ensures consistency
 
-// Enqueue easepick CSS from local vendor directory
-wp_enqueue_style(
-    'wp-mbb-easepick',
-    $plugin_url . 'assets/vendor/easepick/easepick.css',
-    [],
-    '1.2.1'
-);
-
-// Enqueue easepick dependencies from CDN (UMD bundles work best from CDN)
-wp_enqueue_script(
-    'easepick-datetime',
-    'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
-    [],
-    '1.2.1',
-    true
-);
-
-wp_enqueue_script(
-    'easepick-base-plugin',
-    'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
-    ['easepick-datetime'],
-    '1.2.1',
-    true
-);
-
-// Enqueue easepick core from local vendor directory
-wp_enqueue_script(
-    'wp-mbb-easepick-core',
-    $plugin_url . 'assets/vendor/easepick/easepick.js',
-    ['easepick-datetime', 'easepick-base-plugin'],
-    '1.2.1',
-    true
-);
-
-// Enqueue easepick range plugin from local vendor directory
-wp_enqueue_script(
-    'wp-mbb-easepick-range',
-    $plugin_url . 'assets/vendor/easepick/easepick-range.js',
-    ['wp-mbb-easepick-core'],
-    '1.2.1',
-    true
-);
+// Always use easepick from mylighthouse-booker plugin
+if (!wp_style_is('easepick', 'enqueued')) {
+    wp_enqueue_style('easepick');
+}
+if (!wp_script_is('easepick-datetime', 'enqueued')) {
+    wp_enqueue_script('easepick-datetime');
+}
+if (!wp_script_is('easepick-base-plugin', 'enqueued')) {
+    wp_enqueue_script('easepick-base-plugin');
+}
+if (!wp_script_is('easepick-core', 'enqueued')) {
+    wp_enqueue_script('easepick-core');
+}
+if (!wp_script_is('easepick-range', 'enqueued')) {
+    wp_enqueue_script('easepick-range');
+}
 ?>
 
 <div id="wp-mbb-multi-hotel-modal" class="wp-mbb-modal-overlay" aria-hidden="true" style="display: none;" data-single-hotel="">
