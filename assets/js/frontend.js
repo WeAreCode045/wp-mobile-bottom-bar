@@ -1,4 +1,47 @@
 (function () {
+  // Lazy load Google Maps API - only when needed
+  let googleMapsLoadPromise = null;
+  
+  function loadGoogleMapsAPI() {
+    // Return existing promise if already loading/loaded
+    if (googleMapsLoadPromise) {
+      return googleMapsLoadPromise;
+    }
+    
+    // Check if already loaded
+    if (typeof google !== 'undefined' && google.maps) {
+      return Promise.resolve();
+    }
+    
+    const apiKey = wpMbbConfig?.googleApiKey || '';
+    if (!apiKey) {
+      console.warn('[Mobile Bottom Bar] Google API key not configured');
+      return Promise.reject(new Error('Google API key not configured'));
+    }
+    
+    googleMapsLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        console.log('[Mobile Bottom Bar] Google Maps API loaded successfully');
+        resolve();
+      };
+      
+      script.onerror = () => {
+        console.error('[Mobile Bottom Bar] Failed to load Google Maps API');
+        googleMapsLoadPromise = null; // Reset so it can be retried
+        reject(new Error('Failed to load Google Maps API'));
+      };
+      
+      document.head.appendChild(script);
+    });
+    
+    return googleMapsLoadPromise;
+  }
+
   function ready(callback) {
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       callback();
@@ -438,8 +481,8 @@
       body.appendChild(routeContainer);
 
       // Initialize Google Places Autocomplete on start location input
-      // Use setTimeout to ensure Google Maps API is fully loaded
-      setTimeout(function() {
+      // Load Google Maps API first if not already loaded
+      loadGoogleMapsAPI().then(function() {
         if (typeof google !== 'undefined' && google.maps && google.maps.places) {
           try {
             var autocomplete = new google.maps.places.Autocomplete(startInput, {
@@ -461,7 +504,9 @@
         } else {
           console.warn('[Mobile Bottom Bar] Google Maps Places API not available');
         }
-      }, 100);
+      }).catch(function(error) {
+        console.warn('[Mobile Bottom Bar] Failed to load Google Maps API for autocomplete:', error);
+      });
 
       // Enable route button when start location is entered
       startInput.addEventListener('input', function() {
@@ -689,7 +734,14 @@
         const mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(address) + '&output=embed';
 
         lastTrigger = target;
-        openOverlay(overlayRefs, 'iframe', { href: mapUrl, modalTitle: '', mapAddress: address }, '');
+        
+        // Load Google Maps API before opening the overlay
+        loadGoogleMapsAPI().catch(error => {
+          console.warn('[Mobile Bottom Bar] Google Maps API failed to load, using fallback iframe:', error);
+        }).finally(() => {
+          openOverlay(overlayRefs, 'iframe', { href: mapUrl, modalTitle: '', mapAddress: address }, '');
+        });
+        
         return;
       }
 

@@ -265,7 +265,7 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                     element: pickerElement,
                     inline: true,
                     css: [
-                        'https://new.differenthotels.be/wp-content/plugins/mylighthouse-booker/assets/vendor/easepick/easepick.css'
+                        '/wp-content/plugins/mylighthouse-booker/assets/vendor/easepick/easepick.css'
                     ],
                     plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
                     RangePlugin: {

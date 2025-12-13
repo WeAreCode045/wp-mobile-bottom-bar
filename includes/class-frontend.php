@@ -46,15 +46,9 @@ class MBB_Frontend {
         }
 
         $api_key = $all_settings['contactFormSettings']['googleApiKey'] ?? '';
-        if (!empty($api_key)) {
-            wp_enqueue_script(
-                'google-maps-api-frontend',
-                'https://maps.googleapis.com/maps/api/js?key=' . urlencode($api_key) . '&libraries=places',
-                [],
-                null,
-                false
-            );
-        }
+        
+        // Don't load Google Maps API on page load - it will be loaded dynamically when needed
+        // This significantly improves page load performance
 
         wp_enqueue_style(
             'mobile-bottom-bar-frontend',
@@ -66,7 +60,7 @@ class MBB_Frontend {
         wp_enqueue_script(
             'mobile-bottom-bar-frontend-js',
             plugin_dir_url(dirname(__FILE__)) . 'assets/js/frontend.js',
-            !empty($api_key) ? ['google-maps-api-frontend'] : [],
+            [],
             '0.1.0',
             true
         );
