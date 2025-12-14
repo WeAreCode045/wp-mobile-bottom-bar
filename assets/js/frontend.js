@@ -1,6 +1,68 @@
 (function () {
   // Lazy load Google Maps API - only when needed
   let googleMapsLoadPromise = null;
+  let easepickLoadPromise = null;
+  
+  function loadEasepickAssets() {
+    // Return existing promise if already loading/loaded
+    if (easepickLoadPromise) {
+      return easepickLoadPromise;
+    }
+    
+    // Check if already loaded
+    if (typeof window.easepick !== 'undefined' && window.easepick.Core) {
+      console.log('[Mobile Bottom Bar] Easepick already loaded');
+      return Promise.resolve();
+    }
+    
+    console.log('[Mobile Bottom Bar] Loading Easepick assets...');
+    
+    easepickLoadPromise = new Promise((resolve, reject) => {
+      // Load CSS first
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.1/dist/index.css';
+      document.head.appendChild(link);
+      
+      // Load scripts in sequence
+      const scripts = [
+        'https://cdn.jsdelivr.net/npm/@easepick/datetime@1.2.1/dist/index.umd.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/base-plugin@1.2.1/dist/index.umd.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/core@1.2.1/dist/index.umd.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/range-plugin@1.2.1/dist/index.umd.js',
+        'https://cdn.jsdelivr.net/npm/@easepick/lock-plugin@1.2.1/dist/index.umd.js'
+      ];
+      
+      function loadScript(index) {
+        if (index >= scripts.length) {
+          console.log('[Mobile Bottom Bar] All Easepick scripts loaded successfully');
+          resolve();
+          return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = scripts[index];
+        script.async = false;
+        
+        script.onload = () => {
+          console.log('[Mobile Bottom Bar] Loaded:', scripts[index]);
+          loadScript(index + 1);
+        };
+        
+        script.onerror = () => {
+          console.error('[Mobile Bottom Bar] Failed to load:', scripts[index]);
+          easepickLoadPromise = null;
+          reject(new Error('Failed to load Easepick script: ' + scripts[index]));
+        };
+        
+        document.head.appendChild(script);
+      }
+      
+      loadScript(0);
+    });
+    
+    return easepickLoadPromise;
+  }
   
   function loadGoogleMapsAPI() {
     // Return existing promise if already loading/loaded
@@ -259,6 +321,11 @@
     }
 
     const { overlay, select, cta, arrivalInput, departureInput, rangeInput } = hotelModalRefs;
+
+    // Load easepick assets before showing modal
+    loadEasepickAssets().catch(error => {
+      console.error('[Mobile Bottom Bar] Failed to load Easepick:', error);
+    });
 
     overlay.setAttribute('aria-hidden', 'false');
     overlay.style.display = 'block';

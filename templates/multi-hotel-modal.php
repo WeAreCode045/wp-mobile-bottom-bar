@@ -10,26 +10,8 @@
 
 defined('ABSPATH') || exit;
 
-// Enqueue easepick assets from mylighthouse-booker plugin
-// The booking button requires mylighthouse-booker, so we always use its easepick assets
-// This avoids duplicate loading and ensures consistency
-
-// Always use easepick from mylighthouse-booker plugin
-if (!wp_style_is('easepick', 'enqueued')) {
-    wp_enqueue_style('easepick');
-}
-if (!wp_script_is('easepick-datetime', 'enqueued')) {
-    wp_enqueue_script('easepick-datetime');
-}
-if (!wp_script_is('easepick-base-plugin', 'enqueued')) {
-    wp_enqueue_script('easepick-base-plugin');
-}
-if (!wp_script_is('easepick-core', 'enqueued')) {
-    wp_enqueue_script('easepick-core');
-}
-if (!wp_script_is('easepick-range', 'enqueued')) {
-    wp_enqueue_script('easepick-range');
-}
+// Easepick assets are loaded dynamically when the modal opens
+// See frontend.js loadEasepickAssets() function
 ?>
 
 <div id="wp-mbb-multi-hotel-modal" class="wp-mbb-modal-overlay" aria-hidden="true" style="display: none;" data-single-hotel="">
@@ -238,7 +220,7 @@ window.wpMbbPluginUrl = '<?php echo esc_url($plugin_url); ?>';
                     element: pickerElement,
                     inline: true,
                     css: [
-                        '/wp-content/plugins/mylighthouse-booker/assets/vendor/easepick/easepick.css'
+                        'wp-content/plugins/mylighthouse-booker/assets/vendor/easepick/easepick.css'
                     ],
                     plugins: [easepickRef.RangePlugin, easepickRef.LockPlugin],
                     RangePlugin: {
